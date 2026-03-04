@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스포츠 베팅 엣지 파인더</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .tab-btn        { padding:10px 18px; border-bottom:3px solid transparent; cursor:pointer; font-weight:500; color:#6b7280; transition:all .2s; }
+    .tab-btn.active { border-bottom-color:#2563eb; color:#2563eb; font-weight:700; }
+    .tab-btn:hover:not(.active) { color:#374151; border-bottom-color:#d1d5db; }
+    .metric-card    { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:16px; }
+    .sport-btn      { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px;
+                      font-size:.9rem; font-weight:600; cursor:pointer; transition:all .15s;
+                      color:#374151; border:none; background:transparent; width:100%; text-align:left; }
+    .sport-btn:hover   { background:#f3f4f6; }
+    .sport-btn.active  { background:#dbeafe; color:#1d4ed8; }
+    .league-header  { background:linear-gradient(90deg,#eff6ff,#f0fdf4); border-left:5px solid #3b82f6;
+                      border-radius:8px; padding:14px 18px; margin-bottom:10px; }
+    .opp-card       { border:1px solid #e5e7eb; border-radius:12px; padding:18px; margin-bottom:14px;
+                      transition:box-shadow .2s; }
+    .opp-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+    .badge { font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:9999px; }
+    .badge-vhigh { background:#d1fae5; color:#065f46; }
+    .badge-high  { background:#dbeafe; color:#1d4ed8; }
+    .badge-mid   { background:#ffedd5; color:#9a3412; }
+    .badge-low   { background:#fee2e2; color:#991b1b; }
+    .stat-box    { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px; text-align:center; }
+    #sport-content { min-height:200px; }
+    .spinner { display:none; text-align:center; padding:60px; color:#9ca3af; font-size:1.1rem; }
+    .spinner.show { display:block; }
+  </style>
+</head>
+<body class="bg-white text-gray-800 flex min-h-screen">
+
+  <!-- ── 사이드바 ── -->
+  <aside class="w-64 shrink-0 bg-gray-50 border-r border-gray-200 h-screen sticky top-0 p-5 flex flex-col gap-5 overflow-y-auto">
+    <div>
+      <h2 class="text-base font-bold text-gray-700 mb-3">⚙️ 설정</h2>
+      <label class="block text-xs font-medium text-gray-500 mb-1">기간</label>
+      <select class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+        <option>오늘</option><option selected>이번 주</option><option>이번 달</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-500 mb-1">최소 엣지 (%)</label>
+      <input id="edgeSlider" type="range" min="0" max="15" value="3" step="0.5" class="w-full accent-blue-600" />
+      <div id="edgeVal" class="text-center text-sm text-gray-500 mt-1">3.0 %</div>
+    </div>
+    <hr class="border-gray-200" />
+    <div>
+      <h2 class="text-base font-bold text-gray-700 mb-3">🏆 종목 선택</h2>
+      <div class="flex flex-col gap-1" id="sport-sidebar">
+        {% for sport_name, sport_data in sports_categories.items() %}
+        <button
+          class="sport-btn {% if sport_name == selected_sport %}active{% endif %}"
+          data-sport="{{ sport_name }}"
+          onclick="selectSport(this)">
+          <span class="text-xl">{{ sport_data.icon }}</span>
+          <span>{{ sport_name }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── 메인 ── -->
+  <main class="flex-1 p-8 overflow-y-auto">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">🏀 스포츠 베팅 엣지 파인더</h1>
+      <p class="text-gray-400 mt-1 text-sm">ML 기반 시스템으로 저평가된 라인 식별 및 알파 생성</p>
+    </header>
+
+    <!-- 요약 메트릭 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="metric-card">
+        <div class="text-xs text-gray-400 mb-1">💰 총 수익</div>
+        <div class="text-2xl font-bold text-gray-900">{{ summary.total_profit }}</div>
+        <div class="text-xs text-green-600 mt-1">{{ summary.profit_delta }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="text-xs text-gray-400 mb-1">🎯 승률</div>
+        <div class="text-2xl font-bold text-gray-900">{{ summary.win_rate }}</div>
+        <div class="text-xs text-green-600 mt-1">{{ summary.win_rate_delta }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="text-xs text-gray-400 mb-1">📈 ROI</div>
+        <div class="text-2xl font-bold text-gray-900">{{ summary.roi }}</div>
+        <div class="text-xs text-green-600 mt-1">{{ summary.roi_delta }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="text-xs text-gray-400 mb-1">🔥 고엣지 플레이</div>
+        <div class="text-2xl font-bold text-gray-900">{{ summary.high_edge }}</div>
+        <div class="text-xs text-gray-400 mt-1">{{ summary.high_edge_delta }}</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="border-b border-gray-200 mb-6 flex gap-1 flex-wrap">
+      <button class="tab-btn active" data-tab="tab-betting">🎯 베팅 기회</button>
+      <button class="tab-btn"        data-tab="tab-perf">📊 성과 분석</button>
+      <button class="tab-btn"        data-tab="tab-model">🎓 모델 정확도</button>
+      <button class="tab-btn"        data-tab="tab-feature">🔬 특성 분석</button>
+    </div>
+
+    <!-- ── 탭1: 베팅 기회 ── -->
+    <div id="tab-betting" class="tab-pane">
+      <div id="sport-header" class="mb-4">
+        {% if selected_sport %}
+        <h2 class="text-xl font-bold">
+          {{ sports_categories[selected_sport].icon }} {{ selected_sport }} — 리그별 베팅 기회
+        </h2>
+        <p class="text-xs text-gray-400 mt-1">
+          📡 데이터 소스: {{ sports_categories[selected_sport].api_source }}
+        </p>
+        {% endif %}
+      </div>
+
+      <div class="spinner" id="loading-spinner">⏳ 데이터를 불러오는 중...</div>
+
+      <div id="sport-content">
+        {% if not selected_sport %}
+          <div id="no-sport-msg" class="text-center py-20 text-gray-300">
+            <div class="text-6xl mb-4">👈</div>
+            <div class="text-xl font-semibold">왼쪽 사이드바에서 스포츠 종목을 선택하세요</div>
+            <div class="text-sm mt-2">농구, 축구, 야구, 미식축구, 아이스하키 중 선택</div>
+          </div>
+        {% else %}
+          {# 초기 로드 시 서버사이드 렌더링 — 이후 종목 변경은 AJAX로 처리 #}
+          {% for code, league_data in opportunities.items() %}
+          <div class="league-header mb-3">
+            <div class="font-bold text-blue-800 text-base">📺 {{ code }}</div>
+            <div class="text-sm text-gray-600">{{ league_data.info.name }}</div>
+            <div class="text-xs text-gray-400 mt-1">📊 북메이커: {{ league_data.info.bookmakers | join(', ') }}</div>
+          </div>
+          {% for opp in league_data.opps %}
+          <div class="opp-card">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <div class="font-semibold text-gray-900">{{ opp['경기'] }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">⏰ {{ opp['시간'] }}</div>
+              </div>
+              <span class="badge
+                {%- if opp['신뢰도'] == '매우높음' %} badge-vhigh
+                {%- elif opp['신뢰도'] == '높음' %} badge-high
+                {%- elif opp['신뢰도'] == '중간' %} badge-mid
+                {%- else %} badge-low{% endif %}">{{ opp['신뢰도'] }}</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">우리 확률</div><div class="font-bold">{{ '%.1f' % opp['우리확률'] }}%</div></div>
+              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">시장 확률</div><div class="font-bold">{{ '%.1f' % opp['시장확률'] }}%</div></div>
+              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">엣지</div><div class="font-bold text-green-600">+{{ '%.1f' % opp['엣지'] }}%</div></div>
+              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">기대값</div><div class="font-bold text-green-600">+{{ '%.1f' % opp['기대값'] }}%</div></div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800">
+                <strong>추천 베팅:</strong> {{ opp['베팅'] }}<br/>
+                <span class="text-xs text-blue-600">{{ opp['북메이커'] }} •
+                  {% if opp['배당률'] > 0 %}+{% endif %}{{ opp['배당률'] }}
+                </span>
+              </div>
+              <div class="bg-green-50 border border-green-100 rounded-lg p-3 text-sm text-green-800">
+                <strong>켈리 기준:</strong> {{ '%.1f' % opp['켈리'] }}% of 자본<br/>
+                <span class="text-xs text-green-600">기대값: +{{ '%.1f' % opp['기대값'] }}%</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── 탭2: 성과 분석 ── -->
+    <div id="tab-perf" class="tab-pane hidden">
+      <h2 class="text-xl font-bold mb-4">성과 분석</h2>
+      <h3 class="font-semibold text-gray-700 mb-2">누적 ROI &amp; 유닛 획득</h3>
+      <div id="roi-chart" class="mb-8"></div>
+      <h3 class="font-semibold text-gray-700 mb-2">주간 성과 분석</h3>
+      <div id="performance-chart"></div>
+    </div>
+
+    <!-- ── 탭3: 모델 정확도 ── -->
+    <div id="tab-model" class="tab-pane hidden">
+      <h2 class="text-xl font-bold mb-1">모델 정확도 vs 라스베가스 라인</h2>
+      <p class="text-sm text-gray-400 mb-4">우리 모델은 모든 베팅 유형에서 시장 배당률을 지속적으로 능가합니다.</p>
+      <div id="accuracy-chart" class="mb-6"></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {% for m in accuracy_metrics %}
+        <div class="metric-card text-center">
+          <div class="text-xs text-gray-400 mb-1">{{ m["카테고리"] }}</div>
+          <div class="text-2xl font-bold text-green-600">+{{ m["diff"] }}%</div>
+          <div class="text-xs text-gray-400">우위</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── 탭4: 특성 분석 ── -->
+    <div id="tab-feature" class="tab-pane hidden">
+      <h2 class="text-xl font-bold mb-1">특성 중요도 분석</h2>
+      <p class="text-sm text-gray-400 mb-4">XGBoost 모델에서 예측을 주도하는 핵심 요소들</p>
+      <div id="feature-chart" class="mb-6"></div>
+      <h3 class="font-semibold mb-3">모델 상세 정보</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-gray-50 rounded-xl p-4 text-sm border border-gray-100">
+          <p class="font-semibold mb-1">알고리즘</p><p class="text-gray-500">XGBoost 앙상블</p>
+          <p class="font-semibold mt-2 mb-1">학습 데이터</p><p class="text-gray-500">15,000+ 경기</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 text-sm border border-gray-100">
+          <p class="font-semibold mb-1">사용 특성</p><p class="text-gray-500">127개 변수</p>
+          <p class="font-semibold mt-2 mb-1">업데이트 빈도</p><p class="text-gray-500">실시간</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-4 text-sm border border-gray-100">
+          <p class="font-semibold mb-1">검증 방법</p><p class="text-gray-500">시계열 교차 검증</p>
+          <p class="font-semibold mt-2 mb-1">백테스트 기간</p><p class="text-gray-500">2023-24 시즌</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ── JavaScript ── -->
+  <script>
+    // ── 차트 데이터 (서버에서 주입) ──
+    const CHARTS = {
+      roi:         {{ roi_chart | tojson }},
+      performance: {{ performance_chart | tojson }},
+      accuracy:    {{ accuracy_chart | tojson }},
+      feature:     {{ feature_chart | tojson }},
+    };
+
+    // ── 탭 전환 ──
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // ── 슬라이더 ──
+    const slider = document.getElementById('edgeSlider');
+    slider.addEventListener('input', () => {
+      document.getElementById('edgeVal').textContent = parseFloat(slider.value).toFixed(1) + ' %';
+    });
+
+    // ── 차트 렌더링 ──
+    const cfg = { responsive: true, displayModeBar: false };
+    Plotly.newPlot('roi-chart',         CHARTS.roi.data,         CHARTS.roi.layout,         cfg);
+    Plotly.newPlot('performance-chart', CHARTS.performance.data, CHARTS.performance.layout, cfg);
+    Plotly.newPlot('accuracy-chart',    CHARTS.accuracy.data,    CHARTS.accuracy.layout,    cfg);
+    Plotly.newPlot('feature-chart',     CHARTS.feature.data,     CHARTS.feature.layout,     cfg);
+
+    // ── 종목 선택 (AJAX — 페이지 새로고침 없음) ──
+    function selectSport(btn) {
+      const sport = btn.dataset.sport;
+
+      // 사이드바 활성 상태 업데이트
+      document.querySelectorAll('.sport-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // 헤더 업데이트
+      const icons = { '농구':'🏀','축구':'⚽','야구':'⚾','미식축구':'🏈','아이스하키':'🏒' };
+      document.getElementById('sport-header').innerHTML = `
+        <h2 class="text-xl font-bold">${icons[sport] || ''} ${sport} — 리그별 베팅 기회</h2>
+        <p class="text-xs text-gray-400 mt-1">📡 데이터를 불러오는 중...</p>
+      `;
+
+      // 로딩 표시
+      const content = document.getElementById('sport-content');
+      const spinner = document.getElementById('loading-spinner');
+      content.innerHTML = '';
+      spinner.classList.add('show');
+
+      // 베팅 기회 탭으로 자동 전환
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+      document.querySelector('[data-tab="tab-betting"]').classList.add('active');
+      document.getElementById('tab-betting').classList.remove('hidden');
+
+      // JSON API 호출
+      fetch(`/api/sport?name=${encodeURIComponent(sport)}`)
+        .then(res => res.json())
+        .then(data => {
+          spinner.classList.remove('show');
+          if (data.error) {
+            content.innerHTML = `<p class="text-red-500 py-8 text-center">${data.error}</p>`;
+            return;
+          }
+          // 헤더 업데이트
+          document.getElementById('sport-header').innerHTML = `
+            <h2 class="text-xl font-bold">${data.icon} ${data.sport} — 리그별 베팅 기회</h2>
+            <p class="text-xs text-gray-400 mt-1">📡 데이터 소스: ${data.api_source}</p>
+          `;
+          // 베팅 기회 렌더링
+          content.innerHTML = renderOpportunities(data.opportunities);
+        })
+        .catch(err => {
+          spinner.classList.remove('show');
+          content.innerHTML = `<p class="text-red-400 py-8 text-center">데이터를 불러오지 못했습니다: ${err.message}</p>`;
+        });
+    }
+
+    function badgeClass(신뢰도) {
+      if (신뢰도 === '매우높음') return 'badge-vhigh';
+      if (신뢰도 === '높음')   return 'badge-high';
+      if (신뢰도 === '중간')   return 'badge-mid';
+      return 'badge-low';
+    }
+
+    function renderOpportunities(opportunities) {
+      const codes = Object.keys(opportunities);
+      if (codes.length === 0) {
+        return '<p class="text-gray-400 py-12 text-center">선택하신 종목에 대한 베팅 기회가 없습니다.</p>';
+      }
+      let html = '';
+      codes.forEach(code => {
+        const { info, opps } = opportunities[code];
+        html += `
+          <div class="league-header mb-3">
+            <div class="font-bold text-blue-800 text-base">📺 ${code}</div>
+            <div class="text-sm text-gray-600">${info.name}</div>
+            <div class="text-xs text-gray-400 mt-1">📊 북메이커: ${info.bookmakers.join(', ')}</div>
+          </div>`;
+        opps.forEach(opp => {
+          const odds = opp['배당률'] > 0 ? `+${opp['배당률']}` : opp['배당률'];
+          html += `
+            <div class="opp-card">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <div class="font-semibold text-gray-900">${opp['경기']}</div>
+                  <div class="text-xs text-gray-400 mt-0.5">⏰ ${opp['시간']}</div>
+                </div>
+                <span class="badge ${badgeClass(opp['신뢰도'])}">${opp['신뢰도']}</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">우리 확률</div><div class="font-bold">${opp['우리확률'].toFixed(1)}%</div></div>
+                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">시장 확률</div><div class="font-bold">${opp['시장확률'].toFixed(1)}%</div></div>
+                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">엣지</div><div class="font-bold text-green-600">+${opp['엣지'].toFixed(1)}%</div></div>
+                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">기대값</div><div class="font-bold text-green-600">+${opp['기대값'].toFixed(1)}%</div></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800">
+                  <strong>추천 베팅:</strong> ${opp['베팅']}<br/>
+                  <span class="text-xs text-blue-600">${opp['북메이커']} • ${odds}</span>
+                </div>
+                <div class="bg-green-50 border border-green-100 rounded-lg p-3 text-sm text-green-800">
+                  <strong>켈리 기준:</strong> ${opp['켈리'].toFixed(1)}% of 자본<br/>
+                  <span class="text-xs text-green-600">기대값: +${opp['기대값'].toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>`;
+        });
+      });
+      return html;
+    }
+  </script>
+</body>
+</html>
