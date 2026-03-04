@@ -1,9 +1,0 @@
-Flask
-pandas
-numpy
-plotly
-# The following were in the original file but are not used in the code.
-# Add them back if you have features that use them.
-# xgboost
-# scikit-learn
-# joblib
