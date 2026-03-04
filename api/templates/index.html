@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>스포츠 베팅 엣지 파인더</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <style>
+    .tab-btn        { padding:10px 16px; border-bottom:2px solid transparent; cursor:pointer; font-weight:500; color:#6b7280; }
+    .tab-btn.active { border-bottom-color:#2563eb; color:#2563eb; font-weight:700; }
+    .metric-card    { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:16px; }
+    .league-card    { background:#f3f4f6; border-left:5px solid #3b82f6; border-radius:8px; padding:16px; margin-bottom:12px; }
+    .opp-card       { border:1px solid #e5e7eb; border-radius:8px; padding:16px; margin-bottom:16px; }
+    .badge-high  { background:#dbeafe; color:#1d4ed8; }
+    .badge-vhigh { background:#d1fae5; color:#065f46; }
+    .badge-mid   { background:#ffedd5; color:#9a3412; }
+    .badge-low   { background:#fee2e2; color:#991b1b; }
+  </style>
+</head>
+<body class="bg-white text-gray-800 flex">
+
+  <!-- 사이드바 -->
+  <aside class="w-60 shrink-0 bg-gray-50 border-r border-gray-200 h-screen sticky top-0 p-5 flex flex-col gap-6 overflow-y-auto">
+    <h2 class="text-lg font-bold">⚙️ 설정</h2>
+    <div>
+      <label class="block text-sm font-medium text-gray-600 mb-1">기간</label>
+      <select class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+        <option>오늘</option><option selected>이번 주</option><option>이번 달</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600 mb-1">최소 엣지 (%)</label>
+      <input id="edgeSlider" type="range" min="0" max="15" value="3" step="0.5" class="w-full accent-blue-600" />
+      <div id="edgeVal" class="text-center text-sm text-gray-500 mt-1">3.0 %</div>
+    </div>
+    <hr />
+    <div>
+      <h2 class="text-lg font-bold mb-3">🏆 종목 선택</h2>
+      <div class="flex flex-col gap-1">
+        {% for sport_name, sport_data in sports_categories.items() %}
+        <a href="/{{ sport_name }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold
+                  {% if sport_name == selected_sport %}bg-blue-100 text-blue-700{% else %}hover:bg-gray-100 text-gray-700{% endif %}">
+          <span class="text-xl">{{ sport_data.icon }}</span>{{ sport_name }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="flex-1 p-8 overflow-y-auto">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold">🏀 스포츠 베팅 엣지 파인더</h1>
+      <p class="text-gray-500 mt-1">ML 기반 시스템으로 저평가된 라인 식별 및 알파 생성</p>
+    </header>
+
+    <!-- 요약 메트릭 -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="metric-card">
+        <div class="text-xs text-gray-500 mb-1">💰 총 수익</div>
+        <div class="text-2xl font-bold">{{ summary.total_profit }}</div>
+        <div class="text-xs text-green-600">{{ summary.profit_delta }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="text-xs text-gray-500 mb-1">🎯 승률</div>
+        <div class="text-2xl font-bold">{{ summary.win_rate }}</div>
+        <div class="text-xs text-green-600">{{ summary.win_rate_delta }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="text-xs text-gray-500 mb-1">📈 ROI</div>
+        <div class="text-2xl font-bold">{{ summary.roi }}</div>
+        <div class="text-xs text-green-600">{{ summary.roi_delta }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="text-xs text-gray-500 mb-1">🔥 고엣지 플레이</div>
+        <div class="text-2xl font-bold">{{ summary.high_edge }}</div>
+        <div class="text-xs text-gray-500">{{ summary.high_edge_delta }}</div>
+      </div>
+    </div>
+
+    <!-- 탭 -->
+    <div class="border-b border-gray-200 mb-6 flex gap-2">
+      <button class="tab-btn active" data-tab="tab1">🎯 베팅 기회</button>
+      <button class="tab-btn"        data-tab="tab2">📊 성과 분석</button>
+      <button class="tab-btn"        data-tab="tab3">🎓 모델 정확도</button>
+      <button class="tab-btn"        data-tab="tab4">🔬 특성 분석</button>
+    </div>
+
+    <!-- 탭1 -->
+    <div id="tab1" class="tab-pane">
+      {% if not selected_sport %}
+        <div class="text-center py-16 text-gray-400 text-lg">👈 왼쪽 사이드바에서 스포츠 종목을 선택하세요</div>
+      {% else %}
+        <h2 class="text-xl font-bold mb-1">{{ sports_categories[selected_sport].icon }} {{ selected_sport }} — 리그별 베팅 기회</h2>
+        <p class="text-sm text-gray-400 mb-4">📡 데이터 소스: {{ sports_categories[selected_sport].api_source }}</p>
+        {% if opportunities %}
+          {% for code, league_data in opportunities.items() %}
+            <div class="league-card">
+              <div class="font-bold text-blue-800">📺 {{ code }}</div>
+              <div class="text-sm text-gray-600">{{ league_data.info.name }}</div>
+              <div class="text-xs text-gray-400 mt-1">📊 북메이커: {{ league_data.info.bookmakers | join(", ") }}</div>
+            </div>
+            {% for opp in league_data.opps %}
+            <div class="opp-card">
+              <div class="flex justify-between items-start mb-3">
+                <div>
+                  <div class="font-semibold">{{ opp["경기"] }}</div>
+                  <div class="text-xs text-gray-400">⏰ {{ opp["시간"] }}</div>
+                </div>
+                <span class="text-xs font-bold px-2 py-1 rounded-full
+                  {% if opp['신뢰도'] == '매우높음' %}badge-vhigh
+                  {% elif opp['신뢰도'] == '높음' %}badge-high
+                  {% elif opp['신뢰도'] == '중간' %}badge-mid
+                  {% else %}badge-low{% endif %}">{{ opp["신뢰도"] }}</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-3">
+                <div class="metric-card !p-2"><div class="text-xs text-gray-400">우리 확률</div><div class="font-bold">{{ "%.1f"|format(opp["우리확률"]) }}%</div></div>
+                <div class="metric-card !p-2"><div class="text-xs text-gray-400">시장 확률</div><div class="font-bold">{{ "%.1f"|format(opp["시장확률"]) }}%</div></div>
+                <div class="metric-card !p-2"><div class="text-xs text-gray-400">엣지</div><div class="font-bold text-green-600">+{{ "%.1f"|format(opp["엣지"]) }}%</div></div>
+                <div class="metric-card !p-2"><div class="text-xs text-gray-400">기대값</div><div class="font-bold text-green-600">+{{ "%.1f"|format(opp["기대값"]) }}%</div></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-800">
+                  <strong>추천 베팅:</strong> {{ opp["베팅"] }}<br/>
+                  <span class="text-xs">{{ opp["북메이커"] }} • {{ opp["배당률"] }}</span>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">
+                  <strong>켈리 기준:</strong> {{ "%.1f"|format(opp["켈리"]) }}% of 자본
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-400 py-8 text-center">선택하신 종목에 대한 베팅 기회가 없습니다.</p>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- 탭2 -->
+    <div id="tab2" class="tab-pane hidden">
+      <h2 class="text-xl font-bold mb-4">성과 분석</h2>
+      <h3 class="font-semibold mb-2">누적 ROI &amp; 유닛 획득</h3>
+      <div id="roi-chart" class="mb-8"></div>
+      <h3 class="font-semibold mb-2">주간 성과 분석</h3>
+      <div id="performance-chart"></div>
+    </div>
+
+    <!-- 탭3 -->
+    <div id="tab3" class="tab-pane hidden">
+      <h2 class="text-xl font-bold mb-1">모델 정확도 vs 라스베가스 라인</h2>
+      <p class="text-sm text-gray-500 mb-4">우리 모델은 모든 베팅 유형에서 시장 배당률을 지속적으로 능가합니다.</p>
+      <div id="accuracy-chart" class="mb-6"></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {% for m in accuracy_metrics %}
+        <div class="metric-card text-center">
+          <div class="text-xs text-gray-400">{{ m["카테고리"] }}</div>
+          <div class="text-2xl font-bold text-green-600">+{{ m["diff"] }}%</div>
+          <div class="text-xs text-gray-400">우위</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- 탭4 -->
+    <div id="tab4" class="tab-pane hidden">
+      <h2 class="text-xl font-bold mb-1">특성 중요도 분석</h2>
+      <p class="text-sm text-gray-500 mb-4">XGBoost 모델에서 예측을 주도하는 핵심 요소들</p>
+      <div id="feature-chart" class="mb-6"></div>
+      <h3 class="font-semibold mb-3">모델 상세 정보</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-gray-100 rounded p-4 text-sm"><p><strong>알고리즘:</strong> XGBoost 앙상블</p><p><strong>학습 데이터:</strong> 15,000+ 경기</p></div>
+        <div class="bg-gray-100 rounded p-4 text-sm"><p><strong>사용 특성:</strong> 127개 변수</p><p><strong>업데이트 빈도:</strong> 실시간</p></div>
+        <div class="bg-gray-100 rounded p-4 text-sm"><p><strong>검증 방법:</strong> 시계열 교차 검증</p><p><strong>백테스트 기간:</strong> 2023-24 시즌</p></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+      });
+    });
+    const slider = document.getElementById('edgeSlider');
+    slider.addEventListener('input', () => {
+      document.getElementById('edgeVal').textContent = parseFloat(slider.value).toFixed(1) + ' %';
+    });
+    function renderChart(id, data) {
+      Plotly.newPlot(id, data.data, data.layout, { responsive: true, displayModeBar: false });
+    }
+    renderChart('roi-chart',         {{ roi_chart_json | safe }});
+    renderChart('performance-chart', {{ performance_chart_json | safe }});
+    renderChart('accuracy-chart',    {{ accuracy_chart_json | safe }});
+    renderChart('feature-chart',     {{ feature_importance_chart_json | safe }});
+  </script>
+</body>
+</html>
