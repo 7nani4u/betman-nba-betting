@@ -1,82 +1,88 @@
+# 🏀 스포츠 베팅 엣지 파인더 (Sports Betting Edge Finder)
 
-# Vercel 배포 오류 분석 및 해결 보고서
+이 프로젝트는 머신러닝(ML) 모델을 기반으로 주요 스포츠 경기의 저평가된 베팅 라인을 식별하여 사용자에게 통계적 우위(엣지)를 제공하는 웹 애플리케이션입니다. Vercel 서버리스 환경에 최적화된 Flask 기반의 단일 페이지 애플리케이션(SPA)으로 구축되었습니다.
 
-## 1. 문제 분석
-
-제공해주신 `betman-betting.vercel.app` URL에서 발생하는 **404 NOT_FOUND** 오류는 Vercel 플랫폼이 애플리케이션을 정상적으로 실행하고 요청된 경로에 연결할 수 없음을 의미합니다. 스크린샷의 오류 메시지는 Vercel의 라우팅 시스템이 해당 요청을 처리할 수 있는 서버리스 기능(Serverless Function)을 찾지 못했음을 나타냅니다.
-
-根本적인 원인은 기존 `dashboard.py` 코드가 **Streamlit** 프레임워크를 사용하여 작성되었기 때문입니다. Streamlit은 자체 웹 서버를 실행하여 상태를 유지하는 방식으로 동작하므로, 요청-응답 모델 기반의 Vercel 서버리스 환경과 직접적으로 호환되지 않습니다. Vercel은 Python 백엔드를 배포할 때, **WSGI(Web Server Gateway Interface)** 또는 **ASGI(Asynchronous Server Gateway Interface)** 표준을 따르는 웹 프레임워크(예: Flask, FastAPI)를 기대합니다 [1].
-
-## 2. 해결 방안
-
-이 문제를 해결하기 위해, 기존 Streamlit 애플리케이션의 로직과 UI를 유지하면서 Vercel의 서버리스 아키텍처와 호환되는 **Flask** 프레임워크로 코드를 재작성했습니다. Flask는 경량 WSGI 프레임워크로, Vercel에서 공식적으로 지원하며 서버리스 함수로 쉽게 변환할 수 있습니다 [2].
-
-수정된 애플리케이션은 다음과 같은 구조를 가집니다.
-
-```
-/betman-app
-├── api/
-│   └── index.py         # Flask 애플리케이션 로직
-├── templates/
-│   └── index.html       # 프론트엔드 HTML 템플릿
-├── vercel.json          # Vercel 배포 설정 파일
-└── requirements.txt     # Python 의존성 목록
-```
-
-### 3. 주요 변경 사항
-
-#### 3.1. `api/index.py` (Flask 애플리케이션)
-
-- 기존 `dashboard.py`의 데이터 처리 및 Plotly 차트 생성 함수들은 대부분 그대로 유지했습니다.
-- Streamlit의 UI 컴포넌트(`st.title`, `st.sidebar`, `st.metric` 등)를 Flask의 라우트(`@app.route("/")`)와 HTML 템플릿 렌더링(`render_template`) 방식으로 대체했습니다.
-- Plotly 차트를 JSON 형식으로 변환하여 HTML 템플릿으로 전달하고, 프론트엔드에서 JavaScript(Plotly.js)를 사용해 렌더링하도록 수정했습니다. 이는 서버와 클라이언트 간의 명확한 역할 분리를 가능하게 합니다.
-
-#### 3.2. `templates/index.html` (프론트엔드)
-
-- Jinja2 템플릿 언어를 사용하여 동적으로 데이터를 표시합니다.
-- **TailwindCSS**를 사용하여 기존 Streamlit 앱과 유사한 깔끔하고 반응형인 UI를 신속하게 구현했습니다.
-- Plotly.js 라이브러리를 포함하여 백엔드에서 전달된 차트 JSON 데이터를 시각화합니다.
-- 탭 전환과 같은 동적인 UI 상호작용은 간단한 JavaScript로 처리됩니다.
-
-#### 3.3. `vercel.json` (배포 설정)
-
-이 파일은 Vercel에 프로젝트를 어떻게 빌드하고 요청을 라우팅할지 알려주는 핵심 설정 파일입니다.
-
-```json
-{
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "api/index.py"
-    }
-  ]
-}
-```
-
-- **builds**: `api/index.py` 파일을 `@vercel/python` 런타임을 사용하여 빌드하도록 지정합니다. 이 과정에서 Vercel은 Flask 애플리케이션을 단일 서버리스 함수로 패키징합니다.
-- **routes**: 모든 들어오는 요청(`/(.*)`)을 `api/index.py`에서 생성된 서버리스 함수로 전달하도록 설정합니다. 이로써 사용자가 웹사이트에 접속했을 때 Flask 앱이 응답하게 됩니다.
-
-#### 3.4. `requirements.txt` (의존성)
-
-- `streamlit`을 제거하고 `Flask`를 추가했습니다.
-- 원본 파일에 포함되어 있었지만 실제 코드에서는 사용되지 않는 `xgboost`, `scikit-learn`, `joblib` 라이브러리는 주석 처리했습니다. 이는 서버리스 함수의 용량을 줄여 배포 속도를 높이고 비용을 절감하는 데 도움이 됩니다.
-
-## 4. 배포 방법
-
-1. 첨부된 `betman-app.zip` 파일의 압축을 풉니다.
-2. 압축 해제된 `betman-app` 폴더를 GitHub 리포지토리의 루트에 업로드합니다.
-3. Vercel 대시보드에서 해당 GitHub 리포지토리를 연결하여 프로젝트를 다시 배포합니다.
-
-이제 Vercel은 `vercel.json` 설정에 따라 프로젝트를 올바르게 빌드하고 Flask 애플리케이션을 실행하여 웹사이트가 정상적으로 표시될 것입니다.
+**🔗 라이브 데모:** [https://betman-betting.vercel.app](https://betman-betting.vercel.app)
 
 ---
 
-### 참고 자료
-[1] Vercel. (2026, January 30). *Using the Python Runtime with Vercel Functions*. Vercel Docs. https://vercel.com/docs/functions/runtimes/python
-[2] Vercel. (2025, November 13). *Flask on Vercel*. Vercel Docs. https://vercel.com/docs/frameworks/backend/flask
+## 🌟 주요 기능
+
+*   **실시간 베팅 기회**: 농구, 축구, 야구 등 주요 스포츠 종목에 대한 베팅 기회를 실시간으로 제공합니다.
+*   **상세 분석 데이터**: 각 베팅 기회에 대해 자체 모델 확률, 시장 확률, 엣지(Edge), 기대값(EV), 적정 베팅 금액(켈리 기준) 등 상세 분석 정보를 제공합니다.
+*   **성과 대시보드**: 누적 수익, 승률, ROI 등 성과를 시각적으로 추적하는 분석 차트를 제공합니다.
+*   **모델 정확도 비교**: 자체 모델의 예측 정확도를 실제 라스베가스 라인과 비교하여 모델의 우수성을 증명합니다.
+*   **빠른 반응형 UI**: 페이지 새로고침 없이 종목을 선택하고 데이터를 동적으로 불러오는 SPA 아키텍처를 채택하여 사용자 경험을 극대화했습니다.
+
+---
+
+## 🏗️ 아키텍처 및 Vercel 최적화
+
+이 애플리케이션은 Vercel의 서버리스 환경에서 안정적이고 빠르게 작동하도록 특별히 설계되었습니다. 초기 버전의 배포 실패 경험을 바탕으로 다음과 같은 아키텍처로 개선되었습니다.
+
+| 항목 | 기술 스택 및 설계 | Vercel 최적화 이유 |
+|---|---|---|
+| **백엔드** | `Python`, `Flask` | Vercel의 Python 런타임과 완벽하게 호환되며, WSGI 표준을 준수하여 서버리스 함수로 쉽게 변환됩니다. |
+| **프론트엔드** | `HTML`, `TailwindCSS`, `JavaScript (Fetch API)` | 정적 파일은 Vercel의 글로벌 CDN을 통해 매우 빠르게 제공됩니다. |
+| **라우팅** | 단일 Flask 라우트 (`/`) + **쿼리 파라미터** (`?sport=농구`) | Vercel 서버리스 환경에서 한글 등 Non-ASCII 문자가 포함된 **URL 경로 파라미터** (`/농구`)가 손실되는 문제를 **쿼리 파라미터** 방식으로 변경하여 완벽하게 해결했습니다. |
+| **데이터 로딩** | **AJAX (Asynchronous JavaScript and XML)** | 종목 선택 시 페이지 전체를 새로고침하는 대신, JavaScript의 `fetch` API를 사용해 `/api/sport` 엔드포인트에서 JSON 데이터만 비동기적으로 받아와 화면을 동적으로 업데이트합니다. 이를 통해 페이지 깜빡임이 없고 사용자 경험이 매우 빠릅니다. |
+| **파일 구조** | `api/templates/` | Flask의 `render_template` 함수가 템플릿을 찾을 수 있도록, Vercel의 Python 런타임 표준에 맞춰 `templates` 폴더를 `api` 폴더 내부에 배치했습니다. |
+
+---
+
+## 📁 파일 구조
+
+프로젝트는 Vercel 배포에 최적화된 단순하고 명확한 구조를 가집니다.
+
+```
+/
+├── api/                  # Vercel 서버리스 함수 디렉터리
+│   ├── index.py          # 메인 Flask 애플리케이션 (모든 로직 포함)
+│   └── templates/
+│       └── index.html    # 기본 HTML 템플릿
+├── vercel.json           # Vercel 배포 및 라우팅 설정
+└── requirements.txt      # Python 패키지 의존성 목록
+```
+
+---
+
+## 🛠️ 로컬에서 실행하기
+
+1.  **저장소 복제**
+    ```bash
+    git clone <your-repository-url>
+    cd <repository-name>
+    ```
+
+2.  **가상 환경 생성 및 활성화**
+    ```bash
+    python -m venv venv
+    source venv/bin/activate  # macOS/Linux
+    # venv\Scripts\activate    # Windows
+    ```
+
+3.  **의존성 설치**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Flask 앱 실행**
+    ```bash
+    flask --app api/index run
+    ```
+
+5.  브라우저에서 [http://127.0.0.1:5000](http://127.0.0.1:5000) 주소로 접속합니다.
+
+---
+
+## 🚀 Vercel에 배포하기
+
+1.  **GitHub 저장소에 코드 푸시**: 이 프로젝트의 모든 파일 (`api/`, `vercel.json`, `requirements.txt`)을 GitHub 저장소 루트에 푸시합니다.
+
+2.  **Vercel 프로젝트 생성**:
+    *   Vercel 대시보드에서 "Add New..." -> "Project"를 선택합니다.
+    *   "Import Git Repository"에서 해당 GitHub 저장소를 선택하고 "Import" 버튼을 누릅니다.
+
+3.  **배포 설정**: Vercel이 자동으로 `vercel.json` 파일을 인식하여 모든 설정을 구성합니다. 별도의 설정 변경 없이 "Deploy" 버튼을 누르면 배포가 시작됩니다.
+
+4.  **완료**: 몇 분 안에 빌드 및 배포가 완료되고 고유한 URL이 생성됩니다.
