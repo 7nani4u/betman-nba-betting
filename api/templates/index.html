@@ -1,362 +1,1146 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>스포츠 베팅 엣지 파인더</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <title>Betman 경기 수집·분석 대시보드</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; }
-    .tab-btn        { padding:10px 18px; border-bottom:3px solid transparent; cursor:pointer; font-weight:500; color:#6b7280; transition:all .2s; }
-    .tab-btn.active { border-bottom-color:#2563eb; color:#2563eb; font-weight:700; }
-    .tab-btn:hover:not(.active) { color:#374151; border-bottom-color:#d1d5db; }
-    .metric-card    { background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:16px; }
-    .sport-btn      { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px;
-                      font-size:.9rem; font-weight:600; cursor:pointer; transition:all .15s;
-                      color:#374151; border:none; background:transparent; width:100%; text-align:left; }
-    .sport-btn:hover   { background:#f3f4f6; }
-    .sport-btn.active  { background:#dbeafe; color:#1d4ed8; }
-    .league-header  { background:linear-gradient(90deg,#eff6ff,#f0fdf4); border-left:5px solid #3b82f6;
-                      border-radius:8px; padding:14px 18px; margin-bottom:10px; }
-    .opp-card       { border:1px solid #e5e7eb; border-radius:12px; padding:18px; margin-bottom:14px;
-                      transition:box-shadow .2s; }
-    .opp-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
-    .badge { font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:9999px; }
-    .badge-vhigh { background:#d1fae5; color:#065f46; }
-    .badge-high  { background:#dbeafe; color:#1d4ed8; }
-    .badge-mid   { background:#ffedd5; color:#9a3412; }
-    .badge-low   { background:#fee2e2; color:#991b1b; }
-    .stat-box    { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px; text-align:center; }
-    #sport-content { min-height:200px; }
-    .spinner { display:none; text-align:center; padding:60px; color:#9ca3af; font-size:1.1rem; }
-    .spinner.show { display:block; }
+    :root {
+      color-scheme: light;
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --border: #d9e2ec;
+      --text: #132238;
+      --muted: #5d6b82;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --success: #047857;
+      --success-soft: #d1fae5;
+      --warning: #b45309;
+      --warning-soft: #fef3c7;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+      --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: #111c33;
+      --panel-soft: #16233f;
+      --border: #29344f;
+      --text: #f8fafc;
+      --muted: #9fb0ca;
+      --accent: #60a5fa;
+      --accent-soft: rgba(96, 165, 250, 0.16);
+      --success: #34d399;
+      --success-soft: rgba(52, 211, 153, 0.14);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251, 191, 36, 0.14);
+      --danger: #f87171;
+      --danger-soft: rgba(248, 113, 113, 0.14);
+      --shadow: 0 14px 34px rgba(2, 6, 23, 0.42);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, var(--bg), var(--bg));
+      color: var(--text);
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .page {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .hero,
+    .panel,
+    .match-card,
+    .info-card,
+    .chart-card,
+    .summary-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.75rem, 3vw, 2.5rem);
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: white;
+      border-color: transparent;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel-title {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .chip.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: transparent;
+      font-weight: 700;
+    }
+
+    .filter-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .range-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .range-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .range-value {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .status-banner {
+      margin: 18px 0;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      display: grid;
+      gap: 8px;
+    }
+
+    .status-head,
+    .status-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .status-head strong {
+      font-size: 1rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status-meta,
+    .status-body {
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .warning-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .warning-item {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--warning-soft);
+      color: var(--warning);
+      border: 1px solid transparent;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-card {
+      padding: 18px;
+      min-height: 126px;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-bottom: 10px;
+    }
+
+    .summary-value {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .summary-note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.95fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 0 0 14px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .section-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .chart-card,
+    .info-card {
+      padding: 18px;
+    }
+
+    .chart {
+      min-height: 320px;
+    }
+
+    .notes-grid {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .info-card h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .matches {
+      display: grid;
+      gap: 14px;
+    }
+
+    .match-card {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .match-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .match-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 0.83rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+
+    .tag.positive {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: transparent;
+    }
+
+    .tag.warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: transparent;
+    }
+
+    .match-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .match-subtitle {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .recommendation {
+      min-width: 240px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+    }
+
+    .recommendation strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .recommendation-grid,
+    .metrics-grid,
+    .odds-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .recommendation-grid,
+    .odds-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .metrics-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .mini-card {
+      padding: 12px;
+      border-radius: 16px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
+      min-height: 88px;
+    }
+
+    .mini-card .label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+    }
+
+    .mini-card .value {
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .mini-card .subvalue {
+      margin-top: 6px;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .reason-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .reason-item {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--accent-soft);
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+
+    details {
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .evidence-table {
+      margin-top: 12px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 560px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.92rem;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .loading,
+    .empty-state,
+    .error-state {
+      padding: 28px 18px;
+      text-align: center;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+    }
+
+    .error-state {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-style: solid;
+    }
+
+    .sticky-actions {
+      position: sticky;
+      top: 16px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .side-card {
+      padding: 18px;
+      border-radius: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .side-card h3 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .side-card p,
+    .side-card li {
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .side-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .refresh-meta {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 1100px) {
+      .content-grid,
+      .filters,
+      .summary-grid,
+      .chart-grid,
+      .metrics-grid,
+      .recommendation-grid,
+      .odds-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sticky-actions {
+        position: static;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 14px;
+      }
+
+      .hero,
+      .panel,
+      .summary-card,
+      .chart-card,
+      .info-card,
+      .match-card,
+      .side-card {
+        border-radius: 16px;
+      }
+
+      .match-top {
+        flex-direction: column;
+      }
+
+      .recommendation {
+        width: 100%;
+        min-width: 0;
+      }
+    }
   </style>
 </head>
-<body class="bg-white text-gray-800 flex min-h-screen">
-
-  <!-- ── 사이드바 ── -->
-  <aside class="w-64 shrink-0 bg-gray-50 border-r border-gray-200 h-screen sticky top-0 p-5 flex flex-col gap-5 overflow-y-auto">
-    <div>
-      <h2 class="text-base font-bold text-gray-700 mb-3">⚙️ 설정</h2>
-      <label class="block text-xs font-medium text-gray-500 mb-1">기간</label>
-      <select class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
-        <option>오늘</option><option selected>이번 주</option><option>이번 달</option>
-      </select>
-    </div>
-    <div>
-      <label class="block text-xs font-medium text-gray-500 mb-1">최소 엣지 (%)</label>
-      <input id="edgeSlider" type="range" min="0" max="15" value="3" step="0.5" class="w-full accent-blue-600" />
-      <div id="edgeVal" class="text-center text-sm text-gray-500 mt-1">3.0 %</div>
-    </div>
-    <hr class="border-gray-200" />
-    <div>
-      <h2 class="text-base font-bold text-gray-700 mb-3">🏆 종목 선택</h2>
-      <div class="flex flex-col gap-1" id="sport-sidebar">
-        {% for sport_name, sport_data in sports_categories.items() %}
-        <button
-          class="sport-btn {% if sport_name == selected_sport %}active{% endif %}"
-          data-sport="{{ sport_name }}"
-          onclick="selectSport(this)">
-          <span class="text-xl">{{ sport_data.icon }}</span>
-          <span>{{ sport_name }}</span>
-        </button>
-        {% endfor %}
-      </div>
-    </div>
-  </aside>
-
-  <!-- ── 메인 ── -->
-  <main class="flex-1 p-8 overflow-y-auto">
-    <header class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">🏀 스포츠 베팅 엣지 파인더</h1>
-      <p class="text-gray-400 mt-1 text-sm">ML 기반 시스템으로 저평가된 라인 식별 및 알파 생성</p>
-    </header>
-
-    <!-- 요약 메트릭 -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <div class="metric-card">
-        <div class="text-xs text-gray-400 mb-1">💰 총 수익</div>
-        <div class="text-2xl font-bold text-gray-900">{{ summary.total_profit }}</div>
-        <div class="text-xs text-green-600 mt-1">{{ summary.profit_delta }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="text-xs text-gray-400 mb-1">🎯 승률</div>
-        <div class="text-2xl font-bold text-gray-900">{{ summary.win_rate }}</div>
-        <div class="text-xs text-green-600 mt-1">{{ summary.win_rate_delta }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="text-xs text-gray-400 mb-1">📈 ROI</div>
-        <div class="text-2xl font-bold text-gray-900">{{ summary.roi }}</div>
-        <div class="text-xs text-green-600 mt-1">{{ summary.roi_delta }}</div>
-      </div>
-      <div class="metric-card">
-        <div class="text-xs text-gray-400 mb-1">🔥 고엣지 플레이</div>
-        <div class="text-2xl font-bold text-gray-900">{{ summary.high_edge }}</div>
-        <div class="text-xs text-gray-400 mt-1">{{ summary.high_edge_delta }}</div>
-      </div>
-    </div>
-
-    <!-- 탭 -->
-    <div class="border-b border-gray-200 mb-6 flex gap-1 flex-wrap">
-      <button class="tab-btn active" data-tab="tab-betting">🎯 베팅 기회</button>
-      <button class="tab-btn"        data-tab="tab-perf">📊 성과 분석</button>
-      <button class="tab-btn"        data-tab="tab-model">🎓 모델 정확도</button>
-      <button class="tab-btn"        data-tab="tab-feature">🔬 특성 분석</button>
-    </div>
-
-    <!-- ── 탭1: 베팅 기회 ── -->
-    <div id="tab-betting" class="tab-pane">
-      <div id="sport-header" class="mb-4">
-        {% if selected_sport %}
-        <h2 class="text-xl font-bold">
-          {{ sports_categories[selected_sport].icon }} {{ selected_sport }} — 리그별 베팅 기회
-        </h2>
-        <p class="text-xs text-gray-400 mt-1">
-          📡 데이터 소스: {{ sports_categories[selected_sport].api_source }}
-        </p>
-        {% endif %}
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>Betman 경기 수집·분석 대시보드</h1>
+          <p>
+            배트맨 경기 정보를 공통 스키마로 정규화하고, 중복 제거·확률 예측·근거 설명을 한 화면에서 확인할 수 있도록 재구성한 반응형 대시보드입니다.
+          </p>
+        </div>
+        <div class="header-actions">
+          <button class="button" id="theme-toggle" type="button">다크 모드</button>
+          <button class="button primary" id="refresh-button" type="button">데이터 새로고침</button>
+        </div>
       </div>
 
-      <div class="spinner" id="loading-spinner">⏳ 데이터를 불러오는 중...</div>
-
-      <div id="sport-content">
-        {% if not selected_sport %}
-          <div id="no-sport-msg" class="text-center py-20 text-gray-300">
-            <div class="text-6xl mb-4">👈</div>
-            <div class="text-xl font-semibold">왼쪽 사이드바에서 스포츠 종목을 선택하세요</div>
-            <div class="text-sm mt-2">농구, 축구, 야구, 미식축구, 아이스하키 중 선택</div>
-          </div>
-        {% else %}
-          {# 초기 로드 시 서버사이드 렌더링 — 이후 종목 변경은 AJAX로 처리 #}
-          {% for code, league_data in opportunities.items() %}
-          <div class="league-header mb-3">
-            <div class="font-bold text-blue-800 text-base">📺 {{ code }}</div>
-            <div class="text-sm text-gray-600">{{ league_data.info.name }}</div>
-            <div class="text-xs text-gray-400 mt-1">📊 북메이커: {{ league_data.info.bookmakers | join(', ') }}</div>
-          </div>
-          {% for opp in league_data.opps %}
-          <div class="opp-card">
-            <div class="flex justify-between items-start mb-3">
-              <div>
-                <div class="font-semibold text-gray-900">{{ opp['경기'] }}</div>
-                <div class="text-xs text-gray-400 mt-0.5">⏰ {{ opp['시간'] }}</div>
-              </div>
-              <span class="badge
-                {%- if opp['신뢰도'] == '매우높음' %} badge-vhigh
-                {%- elif opp['신뢰도'] == '높음' %} badge-high
-                {%- elif opp['신뢰도'] == '중간' %} badge-mid
-                {%- else %} badge-low{% endif %}">{{ opp['신뢰도'] }}</span>
+      <div class="filters">
+        <div class="panel">
+          <h2 class="panel-title">종목 필터</h2>
+          <div class="chip-row" id="sport-filters"></div>
+        </div>
+        <div class="panel filter-grid">
+          <div class="range-wrap">
+            <div class="range-head">
+              <span>최소 엣지 기준</span>
+              <span class="range-value" id="edge-value">0.0%</span>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">우리 확률</div><div class="font-bold">{{ '%.1f' % opp['우리확률'] }}%</div></div>
-              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">시장 확률</div><div class="font-bold">{{ '%.1f' % opp['시장확률'] }}%</div></div>
-              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">엣지</div><div class="font-bold text-green-600">+{{ '%.1f' % opp['엣지'] }}%</div></div>
-              <div class="stat-box"><div class="text-xs text-gray-400 mb-1">기대값</div><div class="font-bold text-green-600">+{{ '%.1f' % opp['기대값'] }}%</div></div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800">
-                <strong>추천 베팅:</strong> {{ opp['베팅'] }}<br/>
-                <span class="text-xs text-blue-600">{{ opp['북메이커'] }} •
-                  {% if opp['배당률'] > 0 %}+{% endif %}{{ opp['배당률'] }}
-                </span>
-              </div>
-              <div class="bg-green-50 border border-green-100 rounded-lg p-3 text-sm text-green-800">
-                <strong>켈리 기준:</strong> {{ '%.1f' % opp['켈리'] }}% of 자본<br/>
-                <span class="text-xs text-green-600">기대값: +{{ '%.1f' % opp['기대값'] }}%</span>
-              </div>
+            <input id="edge-slider" type="range" min="0" max="12" step="0.5" />
+          </div>
+          <div class="range-head">
+            <span>현재 필터</span>
+            <strong id="filter-summary">전체 · 0.0% 이상</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="status-banner" id="status-banner"></section>
+
+    <section class="summary-grid" id="summary-grid"></section>
+
+    <div class="content-grid">
+      <main>
+        <section>
+          <div class="section-title">
+            <div>
+              <h2>수집/분석 시각화</h2>
+              <p>데이터 품질과 모델 출력이 모바일과 데스크톱 모두에서 바로 읽히도록 카드형 레이아웃으로 구성했습니다.</p>
             </div>
           </div>
-          {% endfor %}
-          {% endfor %}
-        {% endif %}
-      </div>
-    </div>
+          <div class="chart-grid">
+            <article class="chart-card"><div id="chart-edge" class="chart"></div></article>
+            <article class="chart-card"><div id="chart-probability" class="chart"></div></article>
+            <article class="chart-card"><div id="chart-sport" class="chart"></div></article>
+            <article class="chart-card"><div id="chart-factor" class="chart"></div></article>
+          </div>
+        </section>
 
-    <!-- ── 탭2: 성과 분석 ── -->
-    <div id="tab-perf" class="tab-pane hidden">
-      <h2 class="text-xl font-bold mb-4">성과 분석</h2>
-      <h3 class="font-semibold text-gray-700 mb-2">누적 ROI &amp; 유닛 획득</h3>
-      <div id="roi-chart" class="mb-8"></div>
-      <h3 class="font-semibold text-gray-700 mb-2">주간 성과 분석</h3>
-      <div id="performance-chart"></div>
-    </div>
+        <section>
+          <div class="section-title">
+            <div>
+              <h2>분석 설계 메모</h2>
+              <p>예측 과정과 사용된 지표를 사용자가 직접 검증할 수 있도록 설명을 노출합니다.</p>
+            </div>
+          </div>
+          <div class="notes-grid" id="analysis-notes"></div>
+        </section>
 
-    <!-- ── 탭3: 모델 정확도 ── -->
-    <div id="tab-model" class="tab-pane hidden">
-      <h2 class="text-xl font-bold mb-1">모델 정확도 vs 라스베가스 라인</h2>
-      <p class="text-sm text-gray-400 mb-4">우리 모델은 모든 베팅 유형에서 시장 배당률을 지속적으로 능가합니다.</p>
-      <div id="accuracy-chart" class="mb-6"></div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {% for m in accuracy_metrics %}
-        <div class="metric-card text-center">
-          <div class="text-xs text-gray-400 mb-1">{{ m["카테고리"] }}</div>
-          <div class="text-2xl font-bold text-green-600">+{{ m["diff"] }}%</div>
-          <div class="text-xs text-gray-400">우위</div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
+        <section>
+          <div class="section-title">
+            <div>
+              <h2>추천 경기 목록</h2>
+              <p id="match-count-label">로딩 중...</p>
+            </div>
+          </div>
+          <div id="matches-container" class="matches"></div>
+        </section>
+      </main>
 
-    <!-- ── 탭4: 특성 분석 ── -->
-    <div id="tab-feature" class="tab-pane hidden">
-      <h2 class="text-xl font-bold mb-1">특성 중요도 분석</h2>
-      <p class="text-sm text-gray-400 mb-4">XGBoost 모델에서 예측을 주도하는 핵심 요소들</p>
-      <div id="feature-chart" class="mb-6"></div>
-      <h3 class="font-semibold mb-3">모델 상세 정보</h3>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-gray-50 rounded-xl p-4 text-sm border border-gray-100">
-          <p class="font-semibold mb-1">알고리즘</p><p class="text-gray-500">XGBoost 앙상블</p>
-          <p class="font-semibold mt-2 mb-1">학습 데이터</p><p class="text-gray-500">15,000+ 경기</p>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-4 text-sm border border-gray-100">
-          <p class="font-semibold mb-1">사용 특성</p><p class="text-gray-500">127개 변수</p>
-          <p class="font-semibold mt-2 mb-1">업데이트 빈도</p><p class="text-gray-500">실시간</p>
-        </div>
-        <div class="bg-gray-50 rounded-xl p-4 text-sm border border-gray-100">
-          <p class="font-semibold mb-1">검증 방법</p><p class="text-gray-500">시계열 교차 검증</p>
-          <p class="font-semibold mt-2 mb-1">백테스트 기간</p><p class="text-gray-500">2023-24 시즌</p>
-        </div>
-      </div>
-    </div>
-  </main>
+      <aside>
+        <div class="sticky-actions">
+          <section class="side-card">
+            <h3>운영 상태</h3>
+            <div class="refresh-meta" id="refresh-meta"></div>
+          </section>
 
-  <!-- ── JavaScript ── -->
+          <section class="side-card">
+            <h3>수집 설계 포인트</h3>
+            <ul>
+              <li>HTML/JSON 입력을 동일 스키마로 정규화</li>
+              <li>팀명·리그·경기시각 기준 중복 제거</li>
+              <li>원격 실패 시 샘플 데이터로 자동 폴백</li>
+              <li>TTL 캐시로 반복 요청 부하 완화</li>
+            </ul>
+          </section>
+
+          <section class="side-card">
+            <h3>예측 지표</h3>
+            <ul>
+              <li>팀 전력, 최근 폼, 홈/원정 적합도</li>
+              <li>상대 전적, 공격력/수비 안정성</li>
+              <li>리그 순위, 선수 가용성</li>
+              <li>시장 확률과 모델 확률의 차이</li>
+            </ul>
+          </section>
+        </div>
+      </aside>
+    </div>
+  </div>
+
   <script>
-    // ── 차트 데이터 (서버에서 주입) ──
-    const CHARTS = {
-      roi:         {{ roi_chart | tojson }},
-      performance: {{ performance_chart | tojson }},
-      accuracy:    {{ accuracy_chart | tojson }},
-      feature:     {{ feature_chart | tojson }},
+    const initialPayload = {{ initial_payload | tojson }};
+
+    const state = {
+      payload: initialPayload,
+      selectedSport: initialPayload.filters.selected_sport || '전체',
+      minEdge: Number(initialPayload.filters.min_edge || 0),
+      isLoading: false,
     };
 
-    // ── 탭 전환 ──
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
-        btn.classList.add('active');
-        document.getElementById(btn.dataset.tab).classList.remove('hidden');
-      });
-    });
+    const elements = {
+      sportFilters: document.getElementById('sport-filters'),
+      edgeSlider: document.getElementById('edge-slider'),
+      edgeValue: document.getElementById('edge-value'),
+      filterSummary: document.getElementById('filter-summary'),
+      statusBanner: document.getElementById('status-banner'),
+      summaryGrid: document.getElementById('summary-grid'),
+      analysisNotes: document.getElementById('analysis-notes'),
+      matchesContainer: document.getElementById('matches-container'),
+      matchCountLabel: document.getElementById('match-count-label'),
+      refreshMeta: document.getElementById('refresh-meta'),
+      themeToggle: document.getElementById('theme-toggle'),
+      refreshButton: document.getElementById('refresh-button'),
+    };
 
-    // ── 슬라이더 ──
-    const slider = document.getElementById('edgeSlider');
-    slider.addEventListener('input', () => {
-      document.getElementById('edgeVal').textContent = parseFloat(slider.value).toFixed(1) + ' %';
-    });
+    const chartMap = {
+      edge: 'chart-edge',
+      probability: 'chart-probability',
+      sport: 'chart-sport',
+      factor: 'chart-factor',
+    };
 
-    // ── 차트 렌더링 ──
-    const cfg = { responsive: true, displayModeBar: false };
-    Plotly.newPlot('roi-chart',         CHARTS.roi.data,         CHARTS.roi.layout,         cfg);
-    Plotly.newPlot('performance-chart', CHARTS.performance.data, CHARTS.performance.layout, cfg);
-    Plotly.newPlot('accuracy-chart',    CHARTS.accuracy.data,    CHARTS.accuracy.layout,    cfg);
-    Plotly.newPlot('feature-chart',     CHARTS.feature.data,     CHARTS.feature.layout,     cfg);
-
-    // ── 종목 선택 (AJAX — 페이지 새로고침 없음) ──
-    function selectSport(btn) {
-      const sport = btn.dataset.sport;
-
-      // 사이드바 활성 상태 업데이트
-      document.querySelectorAll('.sport-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      // 헤더 업데이트
-      const icons = { '농구':'🏀','축구':'⚽','야구':'⚾','미식축구':'🏈','아이스하키':'🏒' };
-      document.getElementById('sport-header').innerHTML = `
-        <h2 class="text-xl font-bold">${icons[sport] || ''} ${sport} — 리그별 베팅 기회</h2>
-        <p class="text-xs text-gray-400 mt-1">📡 데이터를 불러오는 중...</p>
-      `;
-
-      // 로딩 표시
-      const content = document.getElementById('sport-content');
-      const spinner = document.getElementById('loading-spinner');
-      content.innerHTML = '';
-      spinner.classList.add('show');
-
-      // 베팅 기회 탭으로 자동 전환
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
-      document.querySelector('[data-tab="tab-betting"]').classList.add('active');
-      document.getElementById('tab-betting').classList.remove('hidden');
-
-      // JSON API 호출
-      fetch(`/api/sport?name=${encodeURIComponent(sport)}`)
-        .then(res => res.json())
-        .then(data => {
-          spinner.classList.remove('show');
-          if (data.error) {
-            content.innerHTML = `<p class="text-red-500 py-8 text-center">${data.error}</p>`;
-            return;
-          }
-          // 헤더 업데이트
-          document.getElementById('sport-header').innerHTML = `
-            <h2 class="text-xl font-bold">${data.icon} ${data.sport} — 리그별 베팅 기회</h2>
-            <p class="text-xs text-gray-400 mt-1">📡 데이터 소스: ${data.api_source}</p>
-          `;
-          // 베팅 기회 렌더링
-          content.innerHTML = renderOpportunities(data.opportunities);
-        })
-        .catch(err => {
-          spinner.classList.remove('show');
-          content.innerHTML = `<p class="text-red-400 py-8 text-center">데이터를 불러오지 못했습니다: ${err.message}</p>`;
-        });
-    }
-
-    function badgeClass(신뢰도) {
-      if (신뢰도 === '매우높음') return 'badge-vhigh';
-      if (신뢰도 === '높음')   return 'badge-high';
-      if (신뢰도 === '중간')   return 'badge-mid';
-      return 'badge-low';
-    }
-
-    function renderOpportunities(opportunities) {
-      const codes = Object.keys(opportunities);
-      if (codes.length === 0) {
-        return '<p class="text-gray-400 py-12 text-center">선택하신 종목에 대한 베팅 기회가 없습니다.</p>';
+    // Persist the theme choice so the dashboard stays consistent across refreshes.
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('betman-theme', theme);
+      elements.themeToggle.textContent = theme === 'dark' ? '라이트 모드' : '다크 모드';
+      if (state.payload) {
+        renderCharts(state.payload.charts);
       }
-      let html = '';
-      codes.forEach(code => {
-        const { info, opps } = opportunities[code];
-        html += `
-          <div class="league-header mb-3">
-            <div class="font-bold text-blue-800 text-base">📺 ${code}</div>
-            <div class="text-sm text-gray-600">${info.name}</div>
-            <div class="text-xs text-gray-400 mt-1">📊 북메이커: ${info.bookmakers.join(', ')}</div>
-          </div>`;
-        opps.forEach(opp => {
-          const odds = opp['배당률'] > 0 ? `+${opp['배당률']}` : opp['배당률'];
-          html += `
-            <div class="opp-card">
-              <div class="flex justify-between items-start mb-3">
-                <div>
-                  <div class="font-semibold text-gray-900">${opp['경기']}</div>
-                  <div class="text-xs text-gray-400 mt-0.5">⏰ ${opp['시간']}</div>
-                </div>
-                <span class="badge ${badgeClass(opp['신뢰도'])}">${opp['신뢰도']}</span>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">우리 확률</div><div class="font-bold">${opp['우리확률'].toFixed(1)}%</div></div>
-                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">시장 확률</div><div class="font-bold">${opp['시장확률'].toFixed(1)}%</div></div>
-                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">엣지</div><div class="font-bold text-green-600">+${opp['엣지'].toFixed(1)}%</div></div>
-                <div class="stat-box"><div class="text-xs text-gray-400 mb-1">기대값</div><div class="font-bold text-green-600">+${opp['기대값'].toFixed(1)}%</div></div>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div class="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-800">
-                  <strong>추천 베팅:</strong> ${opp['베팅']}<br/>
-                  <span class="text-xs text-blue-600">${opp['북메이커']} • ${odds}</span>
-                </div>
-                <div class="bg-green-50 border border-green-100 rounded-lg p-3 text-sm text-green-800">
-                  <strong>켈리 기준:</strong> ${opp['켈리'].toFixed(1)}% of 자본<br/>
-                  <span class="text-xs text-green-600">기대값: +${opp['기대값'].toFixed(1)}%</span>
-                </div>
-              </div>
-            </div>`;
+    }
+
+    function getChartThemeLayout() {
+      const styles = getComputedStyle(document.documentElement);
+      return {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { color: styles.getPropertyValue('--text').trim() },
+        xaxis: {
+          gridcolor: styles.getPropertyValue('--border').trim(),
+          zerolinecolor: styles.getPropertyValue('--border').trim(),
+        },
+        yaxis: {
+          gridcolor: styles.getPropertyValue('--border').trim(),
+          zerolinecolor: styles.getPropertyValue('--border').trim(),
+        },
+        legend: { font: { color: styles.getPropertyValue('--text').trim() } },
+      };
+    }
+
+    function formatPercent(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return '-';
+      }
+      return `${Number(value).toFixed(1)}%`;
+    }
+
+    function formatNumber(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return '-';
+      }
+      return Number(value).toFixed(2);
+    }
+
+    function formatBand(band) {
+      if (!band) {
+        return '-';
+      }
+      return `${formatPercent(band.low)} ~ ${formatPercent(band.high)}`;
+    }
+
+    function formatDate(value) {
+      if (!value) {
+        return '-';
+      }
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return value;
+      }
+      return new Intl.DateTimeFormat('ko-KR', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(date);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    // Render the sport chips from the live API payload so counts always stay current.
+    function renderSportFilters(sports) {
+      elements.sportFilters.innerHTML = sports.map((sport) => `
+        <button
+          type="button"
+          class="chip ${sport.name === state.selectedSport ? 'active' : ''}"
+          data-sport="${escapeHtml(sport.name)}"
+        >
+          <span>${escapeHtml(sport.name)}</span>
+          <span>${sport.count}</span>
+        </button>
+      `).join('');
+
+      elements.sportFilters.querySelectorAll('[data-sport]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.selectedSport = button.dataset.sport;
+          loadDashboard();
         });
       });
-      return html;
     }
+
+    function renderStatus(status) {
+      const warnings = (status.warnings || []).map((warning) => `
+        <div class="warning-item">${escapeHtml(warning)}</div>
+      `).join('');
+
+      elements.statusBanner.innerHTML = `
+        <div class="status-head">
+          <strong>${escapeHtml(status.source_label)} 기반 수집 상태</strong>
+          <span class="status-pill">${status.cache_hit ? '캐시 응답' : '실시간 계산'}</span>
+        </div>
+        <div class="status-meta">
+          <span>원본 ${status.raw_count}건 → 정규화 ${status.normalized_count}건 → 중복 제거 ${status.deduplicated_count}건</span>
+          <span>누락 배당 ${status.missing_odds_count}건</span>
+        </div>
+        <div class="status-body">
+          수집 시각 ${formatDate(status.collected_at)} · 데이터 누락과 중복을 상태 패널에서 즉시 확인할 수 있습니다.
+        </div>
+        ${warnings ? `<div class="warning-list">${warnings}</div>` : ''}
+      `;
+    }
+
+    function renderSummary(summary) {
+      const cards = [
+        {
+          label: '전체 경기',
+          value: summary.total_matches,
+          note: `${summary.sports_covered}개 종목 · ${summary.leagues_covered}개 리그`,
+        },
+        {
+          label: '필터 적용 경기',
+          value: summary.visible_matches,
+          note: `최소 엣지 ${formatPercent(state.minEdge)} 이상`,
+        },
+        {
+          label: '평균 엣지',
+          value: formatPercent(summary.average_edge),
+          note: '추천 대상 경기 기준 평균',
+        },
+        {
+          label: '최상위 추천',
+          value: summary.best_pick ? summary.best_pick.bet : '없음',
+          note: summary.best_pick
+            ? `${summary.best_pick.match} · EV ${formatPercent(summary.best_pick.expected_value_percent)}`
+            : summary.refresh_note,
+        },
+      ];
+
+      elements.summaryGrid.innerHTML = cards.map((card) => `
+        <article class="summary-card">
+          <div class="summary-label">${escapeHtml(card.label)}</div>
+          <div class="summary-value">${escapeHtml(card.value)}</div>
+          <div class="summary-note">${escapeHtml(card.note)}</div>
+        </article>
+      `).join('');
+    }
+
+    function renderNotes(notes) {
+      elements.analysisNotes.innerHTML = notes.map((note) => `
+        <article class="info-card">
+          <h3>${escapeHtml(note.title)}</h3>
+          <p>${escapeHtml(note.body)}</p>
+        </article>
+      `).join('');
+    }
+
+    function oddsCard(label, odds, market, model) {
+      return `
+        <div class="mini-card">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value">배당 ${formatNumber(odds)}</div>
+          <div class="subvalue">시장 ${formatPercent(market)} · 모델 ${formatPercent(model)}</div>
+        </div>
+      `;
+    }
+
+    function renderMatches(matches, totalBeforeFilter) {
+      elements.matchCountLabel.textContent = `총 ${matches.length}경기 표시 / 필터 전 ${totalBeforeFilter}경기`;
+
+      if (!matches.length) {
+        elements.matchesContainer.innerHTML = `
+          <div class="empty-state">
+            선택한 조건에 맞는 경기가 없습니다. 최소 엣지 기준을 낮추거나 종목 필터를 변경해 주세요.
+          </div>
+        `;
+        return;
+      }
+
+      elements.matchesContainer.innerHTML = matches.map((match) => {
+        const recommendation = match.recommendation;
+        const oddsCards = [
+          oddsCard(match.home_team, match.odds.home, match.market_probabilities.home, match.model_probabilities.home),
+          match.odds.draw ? oddsCard('무승부', match.odds.draw, match.market_probabilities.draw, match.model_probabilities.draw) : '',
+          oddsCard(match.away_team, match.odds.away, match.market_probabilities.away, match.model_probabilities.away),
+        ].join('');
+
+        const evidenceRows = match.evidence.map((item) => `
+          <tr>
+            <td>${escapeHtml(item.label)}</td>
+            <td>${formatNumber(item.home_value)}</td>
+            <td>${formatNumber(item.away_value)}</td>
+            <td>${formatNumber(item.gap)}</td>
+            <td>${formatPercent(item.weight)}</td>
+            <td>${item.impact > 0 ? '+' : ''}${formatNumber(item.impact)}</td>
+          </tr>
+        `).join('');
+
+        return `
+          <article class="match-card">
+            <div class="match-top">
+              <div>
+                <div class="match-meta">
+                  <span class="tag">${escapeHtml(match.sport)}</span>
+                  <span class="tag">${escapeHtml(match.league_name)}</span>
+                  <span class="tag">${escapeHtml(match.round_name)}</span>
+                  <span class="tag ${recommendation.expected_value_percent > 0 ? 'positive' : 'warning'}">${escapeHtml(match.confidence_label)}</span>
+                </div>
+                <div class="match-title">${escapeHtml(match.home_team)} vs ${escapeHtml(match.away_team)}</div>
+                <div class="match-subtitle">
+                  경기시각 ${formatDate(match.kickoff)} · 상태 ${escapeHtml(match.status)} · 갱신 ${formatDate(match.updated_at)}
+                </div>
+              </div>
+
+              <div class="recommendation">
+                <strong>추천: ${escapeHtml(recommendation.label)}</strong>
+                <div>모델 확률 ${formatPercent(recommendation.probability_percent)} · 시장 확률 ${formatPercent(recommendation.market_probability_percent)}</div>
+                <div>엣지 ${formatPercent(recommendation.edge_percent)} · 기대값 ${formatPercent(recommendation.expected_value_percent)}</div>
+                <div>페어오즈 ${formatNumber(recommendation.fair_odds)} · 리스크 ${escapeHtml(recommendation.risk_label)}</div>
+                <div>켈리 ${formatPercent(recommendation.kelly_percent)} · 1/4 켈리 ${formatPercent(recommendation.quarter_kelly_percent)}</div>
+                <div>확률 구간 ${formatBand(recommendation.probability_band)}</div>
+              </div>
+            </div>
+
+            <div class="odds-grid">${oddsCards}</div>
+
+            <div class="metrics-grid">
+              <div class="mini-card">
+                <div class="label">분석 근거 1</div>
+                <div class="value">${escapeHtml(match.top_reasons[0] || '-')}</div>
+              </div>
+              <div class="mini-card">
+                <div class="label">분석 근거 2</div>
+                <div class="value">${escapeHtml(match.top_reasons[1] || '-')}</div>
+              </div>
+              <div class="mini-card">
+                <div class="label">분석 근거 3</div>
+                <div class="value">${escapeHtml(match.top_reasons[2] || '-')}</div>
+              </div>
+              <div class="mini-card">
+                <div class="label">데이터 출처</div>
+                <div class="value">${escapeHtml(match.source_label)}</div>
+                <div class="subvalue">품질 ${formatPercent(match.quality.data_quality_score)} · 변동성 ${formatPercent(match.quality.volatility_score)}</div>
+              </div>
+              <div class="mini-card">
+                <div class="label">예상 경기 흐름</div>
+                <div class="value">${escapeHtml(match.projection.script_label)}</div>
+                <div class="subvalue">${escapeHtml(match.projection.scoreline_hint)}</div>
+              </div>
+              <div class="mini-card">
+                <div class="label">시장 괴리</div>
+                <div class="value">${formatPercent(match.quality.market_disagreement_percent)}</div>
+                <div class="subvalue">오버라운드 ${formatPercent(match.quality.market_overround_percent)}</div>
+              </div>
+              <div class="mini-card">
+                <div class="label">운영 판단</div>
+                <div class="value">${escapeHtml(match.quality.volatility_label)}</div>
+                <div class="subvalue">킥오프까지 ${match.quality.time_to_kickoff_hours}시간</div>
+              </div>
+            </div>
+
+            <ul class="reason-list">
+              ${match.top_reasons.map((reason) => `<li class="reason-item">${escapeHtml(reason)}</li>`).join('')}
+            </ul>
+
+            <details>
+              <summary>세부 지표 보기</summary>
+              <div class="evidence-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>지표</th>
+                      <th>${escapeHtml(match.home_team)}</th>
+                      <th>${escapeHtml(match.away_team)}</th>
+                      <th>격차</th>
+                      <th>가중치</th>
+                      <th>모델 영향</th>
+                    </tr>
+                  </thead>
+                  <tbody>${evidenceRows}</tbody>
+                </table>
+              </div>
+            </details>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderRefreshMeta(payload) {
+      const bestPick = payload.summary.best_pick;
+      elements.refreshMeta.innerHTML = `
+        <div>생성 시각: ${formatDate(payload.generated_at)}</div>
+        <div>필터: ${escapeHtml(payload.filters.selected_sport)} · ${formatPercent(payload.filters.min_edge)} 이상</div>
+        <div>추천 가능 경기: ${payload.summary.actionable_matches}건</div>
+        <div>최상위 추천: ${bestPick ? `${escapeHtml(bestPick.match)} / ${escapeHtml(bestPick.bet)}` : '없음'}</div>
+      `;
+    }
+
+    // Use Plotly.react so chart updates stay fast when filters or themes change.
+    function renderCharts(charts) {
+      const themeLayout = getChartThemeLayout();
+      Object.entries(chartMap).forEach(([key, elementId]) => {
+        const figure = charts[key];
+        if (!figure) {
+          return;
+        }
+        Plotly.react(
+          elementId,
+          figure.data,
+          { ...figure.layout, ...themeLayout },
+          { responsive: true, displayModeBar: false }
+        );
+      });
+    }
+
+    function renderDashboard(payload) {
+      state.payload = payload;
+      elements.edgeSlider.value = String(state.minEdge);
+      elements.edgeValue.textContent = formatPercent(state.minEdge);
+      elements.filterSummary.textContent = `${state.selectedSport} · ${formatPercent(state.minEdge)} 이상`;
+      renderSportFilters(payload.sports);
+      renderStatus(payload.status);
+      renderSummary(payload.summary);
+      renderNotes(payload.analysis_notes);
+      renderMatches(payload.matches, payload.total_matches_before_filter);
+      renderRefreshMeta(payload);
+      renderCharts(payload.charts);
+    }
+
+    async function loadDashboard(forceRefresh = false) {
+      state.isLoading = true;
+      elements.matchesContainer.innerHTML = '<div class="loading">데이터를 불러오는 중입니다...</div>';
+      elements.matchCountLabel.textContent = '로딩 중...';
+      elements.edgeValue.textContent = formatPercent(state.minEdge);
+      elements.filterSummary.textContent = `${state.selectedSport} · ${formatPercent(state.minEdge)} 이상`;
+
+      const params = new URLSearchParams();
+      if (state.selectedSport && state.selectedSport !== '전체') {
+        params.set('sport', state.selectedSport);
+      }
+      params.set('min_edge', String(state.minEdge));
+      if (forceRefresh) {
+        params.set('refresh', '1');
+      }
+
+      try {
+        const response = await fetch(`/api/dashboard?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        renderDashboard(payload);
+      } catch (error) {
+        elements.matchesContainer.innerHTML = `
+          <div class="error-state">
+            데이터를 불러오지 못했습니다. ${escapeHtml(error.message)}
+          </div>
+        `;
+      } finally {
+        state.isLoading = false;
+      }
+    }
+
+    // Delay slider-triggered fetches slightly so mobile dragging stays responsive.
+    let sliderTimer = null;
+    elements.edgeSlider.addEventListener('input', () => {
+      state.minEdge = Number(elements.edgeSlider.value);
+      elements.edgeValue.textContent = formatPercent(state.minEdge);
+      elements.filterSummary.textContent = `${state.selectedSport} · ${formatPercent(state.minEdge)} 이상`;
+
+      window.clearTimeout(sliderTimer);
+      sliderTimer = window.setTimeout(() => loadDashboard(), 180);
+    });
+
+    elements.refreshButton.addEventListener('click', () => loadDashboard(true));
+    elements.themeToggle.addEventListener('click', () => {
+      const nextTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+    });
+
+    window.addEventListener('resize', () => {
+      if (state.payload) {
+        renderCharts(state.payload.charts);
+      }
+    });
+
+    const savedTheme = localStorage.getItem('betman-theme') || 'light';
+    applyTheme(savedTheme);
+    renderDashboard(initialPayload);
   </script>
 </body>
 </html>
