@@ -220,6 +220,7 @@ class BetmanCollector:
         "football": "미식축구",
         "ice hockey": "아이스하키",
         "hockey": "아이스하키",
+        "volleyball": "배구",
     }
 
     def __init__(self) -> None:
@@ -467,204 +468,99 @@ class BetmanCollector:
     def _sample_rows(self) -> List[Dict[str, Any]]:
         """Return deterministic seed data that mirrors the production schema."""
 
-        return [
-            {
-                "match_id": "btm-001",
-                "sport": "농구",
-                "league": "NBA",
-                "league_name": "미국 NBA",
-                "round_name": "프로토 승부식",
-                "kickoff": "2026-06-13T11:30:00+09:00",
-                "home_team": "Lakers",
-                "away_team": "Celtics",
-                "status": "발매중",
-                "odds_home": 1.82,
-                "odds_away": 2.03,
-                "home_power_rating": 83,
-                "away_power_rating": 79,
-                "home_recent_form": 76,
-                "away_recent_form": 68,
-                "home_venue_index": 74,
-                "away_venue_index": 58,
-                "home_head_to_head_index": 63,
-                "away_head_to_head_index": 52,
-                "home_attacking_index": 81,
-                "away_attacking_index": 77,
-                "home_defensive_index": 72,
-                "away_defensive_index": 67,
-                "home_standings_index": 78,
-                "away_standings_index": 72,
-                "home_availability_index": 75,
-                "away_availability_index": 69,
-                "updated_at": "2026-06-12T02:20:00+09:00",
-            },
-            {
-                "match_id": "btm-002",
-                "sport": "축구",
-                "league": "KLEAGUE1",
-                "league_name": "K리그1",
-                "round_name": "축구토토 승무패",
-                "kickoff": "2026-06-13T19:00:00+09:00",
-                "home_team": "울산",
-                "away_team": "전북",
-                "status": "발매중",
-                "odds_home": 2.12,
-                "odds_draw": 3.24,
-                "odds_away": 3.44,
-                "home_power_rating": 79,
-                "away_power_rating": 76,
-                "home_recent_form": 72,
-                "away_recent_form": 65,
-                "home_venue_index": 77,
-                "away_venue_index": 54,
-                "home_head_to_head_index": 62,
-                "away_head_to_head_index": 50,
-                "home_attacking_index": 74,
-                "away_attacking_index": 68,
-                "home_defensive_index": 73,
-                "away_defensive_index": 66,
-                "home_standings_index": 82,
-                "away_standings_index": 69,
-                "home_availability_index": 71,
-                "away_availability_index": 67,
-                "updated_at": "2026-06-12T01:55:00+09:00",
-            },
-            {
-                "match_id": "btm-003",
-                "sport": "야구",
-                "league": "KBO",
-                "league_name": "KBO 리그",
-                "round_name": "프로토 승부식",
-                "kickoff": "2026-06-13T18:30:00+09:00",
-                "home_team": "LG",
-                "away_team": "두산",
-                "status": "발매중",
-                "odds_home": 1.76,
-                "odds_away": 2.15,
-                "home_power_rating": 81,
-                "away_power_rating": 75,
-                "home_recent_form": 78,
-                "away_recent_form": 62,
-                "home_venue_index": 73,
-                "away_venue_index": 57,
-                "home_head_to_head_index": 66,
-                "away_head_to_head_index": 48,
-                "home_attacking_index": 80,
-                "away_attacking_index": 71,
-                "home_defensive_index": 76,
-                "away_defensive_index": 61,
-                "home_standings_index": 84,
-                "away_standings_index": 64,
-                "home_availability_index": 74,
-                "away_availability_index": 63,
-                "updated_at": "2026-06-12T02:05:00+09:00",
-            },
-            {
-                "match_id": "btm-004",
-                "sport": "축구",
-                "league": "EPL",
-                "league_name": "잉글랜드 프리미어리그",
-                "round_name": "프로토 승부식",
-                "kickoff": "2026-06-14T04:00:00+09:00",
-                "home_team": "Arsenal",
-                "away_team": "Chelsea",
-                "status": "발매중",
-                "odds_home": 2.04,
-                "odds_draw": 3.38,
-                "odds_away": 3.72,
-                "home_power_rating": 84,
-                "away_power_rating": 77,
-                "home_recent_form": 79,
-                "away_recent_form": 69,
-                "home_venue_index": 76,
-                "away_venue_index": 55,
-                "home_head_to_head_index": 58,
-                "away_head_to_head_index": 49,
-                "home_attacking_index": 82,
-                "away_attacking_index": 71,
-                "home_defensive_index": 77,
-                "away_defensive_index": 68,
-                "home_standings_index": 83,
-                "away_standings_index": 70,
-                "home_availability_index": 74,
-                "away_availability_index": 66,
-                "updated_at": "2026-06-12T02:10:00+09:00",
-            },
-            {
-                "match_id": "btm-005",
-                "sport": "미식축구",
-                "league": "NFL",
-                "league_name": "미국 NFL",
-                "round_name": "프로토 승부식",
-                "kickoff": "2026-06-15T09:20:00+09:00",
-                "home_team": "Chiefs",
-                "away_team": "Bills",
-                "status": "발매예정",
-                "odds_home": 1.91,
-                "odds_away": 1.95,
-                "home_power_rating": 86,
-                "away_power_rating": 82,
-                "home_recent_form": 81,
-                "away_recent_form": 76,
-                "home_venue_index": 74,
-                "away_venue_index": 61,
-                "home_head_to_head_index": 60,
-                "away_head_to_head_index": 53,
-                "home_attacking_index": 84,
-                "away_attacking_index": 80,
-                "home_defensive_index": 75,
-                "away_defensive_index": 70,
-                "home_standings_index": 86,
-                "away_standings_index": 79,
-                "home_availability_index": 77,
-                "away_availability_index": 71,
-                "updated_at": "2026-06-12T01:40:00+09:00",
-            },
-            {
-                "match_id": "btm-006",
-                "sport": "아이스하키",
-                "league": "NHL",
-                "league_name": "미국 NHL",
-                "round_name": "프로토 승부식",
-                "kickoff": "2026-06-15T08:00:00+09:00",
-                "home_team": "Bruins",
-                "away_team": "Rangers",
-                "status": "발매중",
-                "odds_home": 2.18,
-                "odds_away": 1.79,
-                "home_power_rating": 74,
-                "away_power_rating": 79,
-                "home_recent_form": 67,
-                "away_recent_form": 75,
-                "home_venue_index": 71,
-                "away_venue_index": 60,
-                "home_head_to_head_index": 49,
-                "away_head_to_head_index": 58,
-                "home_attacking_index": 69,
-                "away_attacking_index": 76,
-                "home_defensive_index": 71,
-                "away_defensive_index": 74,
-                "home_standings_index": 70,
-                "away_standings_index": 79,
-                "home_availability_index": 68,
-                "away_availability_index": 75,
-                "updated_at": "2026-06-12T02:00:00+09:00",
-            },
-            {
-                "match_id": "btm-006-dup",
-                "sport": "아이스하키",
-                "league": "NHL",
-                "league_name": "미국 NHL",
-                "round_name": "프로토 승부식",
-                "kickoff": "2026-06-15T08:00:00+09:00",
-                "home_team": "Bruins",
-                "away_team": "Rangers",
-                "status": "발매중",
-                "odds_home": 2.12,
-                "odds_away": 1.82,
-                "updated_at": "2026-06-12T02:12:00+09:00",
-            },
+        def make_row(
+            match_id: str,
+            sport: str,
+            league: str,
+            league_name: str,
+            kickoff: str,
+            home_team: str,
+            away_team: str,
+            odds_home: float,
+            odds_away: float,
+            *,
+            round_name: str = "프로토 승부식",
+            odds_draw: Optional[float] = None,
+            status: str = "발매중",
+            updated_at: str = "2026-06-12T02:10:00+09:00",
+            home_power: float = 75,
+            away_power: float = 72,
+            home_recent: float = 70,
+            away_recent: float = 66,
+            home_venue: float = 72,
+            away_venue: float = 58,
+            home_h2h: float = 58,
+            away_h2h: float = 50,
+            home_attack: float = 76,
+            away_attack: float = 71,
+            home_defense: float = 73,
+            away_defense: float = 68,
+            home_standing: float = 77,
+            away_standing: float = 70,
+            home_available: float = 74,
+            away_available: float = 68,
+        ) -> Dict[str, Any]:
+            return {
+                "match_id": match_id,
+                "sport": sport,
+                "league": league,
+                "league_name": league_name,
+                "round_name": round_name,
+                "kickoff": kickoff,
+                "home_team": home_team,
+                "away_team": away_team,
+                "status": status,
+                "odds_home": odds_home,
+                "odds_draw": odds_draw,
+                "odds_away": odds_away,
+                "home_power_rating": home_power,
+                "away_power_rating": away_power,
+                "home_recent_form": home_recent,
+                "away_recent_form": away_recent,
+                "home_venue_index": home_venue,
+                "away_venue_index": away_venue,
+                "home_head_to_head_index": home_h2h,
+                "away_head_to_head_index": away_h2h,
+                "home_attacking_index": home_attack,
+                "away_attacking_index": away_attack,
+                "home_defensive_index": home_defense,
+                "away_defensive_index": away_defense,
+                "home_standings_index": home_standing,
+                "away_standings_index": away_standing,
+                "home_availability_index": home_available,
+                "away_availability_index": away_available,
+                "updated_at": updated_at,
+            }
+
+        rows = [
+            make_row("btm-001", "농구", "NBA", "미국 NBA", "2026-06-13T11:30:00+09:00", "Lakers", "Celtics", 1.82, 2.03, home_power=83, away_power=79, home_recent=76, away_recent=68, home_attack=81, away_attack=77, home_defense=72, away_defense=67, home_standing=78, away_standing=72, home_available=75, away_available=69),
+            make_row("btm-002", "농구", "KBL", "한국 KBL", "2026-06-13T19:00:00+09:00", "KCC", "SK", 1.91, 1.94, home_power=78, away_power=76, home_recent=72, away_recent=69, home_attack=75, away_attack=73, home_defense=72, away_defense=70, home_standing=80, away_standing=76),
+            make_row("btm-003", "농구", "WKBL", "한국 여자 KBL", "2026-06-14T14:00:00+09:00", "우리은행", "BNK", 1.73, 2.08, home_power=80, away_power=74, home_recent=77, away_recent=65, home_attack=78, away_attack=69, home_defense=75, away_defense=66, home_standing=82, away_standing=68),
+            make_row("btm-004", "농구", "NCAA", "미국 NCAA", "2026-06-14T09:00:00+09:00", "Duke", "Kansas", 1.88, 1.96, home_power=81, away_power=80, home_recent=74, away_recent=73, home_attack=79, away_attack=78, home_defense=71, away_defense=72),
+            make_row("btm-005", "축구", "KLEAGUE1", "K리그1", "2026-06-13T19:00:00+09:00", "울산", "전북", 2.12, 3.44, odds_draw=3.24, round_name="축구토토 승무패", home_power=79, away_power=76, home_recent=72, away_recent=65, home_attack=74, away_attack=68, home_defense=73, away_defense=66, home_standing=82, away_standing=69),
+            make_row("btm-006", "축구", "EPL", "잉글랜드 프리미어리그", "2026-06-14T04:00:00+09:00", "Arsenal", "Chelsea", 2.04, 3.72, odds_draw=3.38, home_power=84, away_power=77, home_recent=79, away_recent=69, home_attack=82, away_attack=71, home_defense=77, away_defense=68, home_standing=83, away_standing=70, home_available=74, away_available=66),
+            make_row("btm-007", "축구", "LALIGA", "스페인 라리가", "2026-06-14T05:00:00+09:00", "Real Madrid", "Atletico", 2.01, 3.85, odds_draw=3.29, home_power=86, away_power=80, home_recent=80, away_recent=72, home_attack=84, away_attack=75, home_defense=78, away_defense=73, home_standing=85, away_standing=78),
+            make_row("btm-008", "축구", "SERIEA", "이탈리아 세리에A", "2026-06-14T03:45:00+09:00", "Inter", "Milan", 2.18, 3.12, odds_draw=3.08, home_power=82, away_power=79, home_recent=76, away_recent=71, home_attack=80, away_attack=77, home_defense=76, away_defense=72, home_standing=81, away_standing=77),
+            make_row("btm-009", "축구", "UCL", "UEFA 챔피언스리그", "2026-06-15T04:00:00+09:00", "Bayern", "PSG", 2.27, 2.84, odds_draw=3.46, home_power=85, away_power=84, home_recent=78, away_recent=77, home_attack=83, away_attack=84, home_defense=75, away_defense=74),
+            make_row("btm-010", "축구", "MLS", "미국 MLS", "2026-06-15T11:30:00+09:00", "LAFC", "Seattle", 1.96, 3.58, odds_draw=3.40, home_power=77, away_power=73, home_recent=72, away_recent=67, home_attack=76, away_attack=70, home_defense=71, away_defense=67),
+            make_row("btm-011", "야구", "KBO", "KBO 리그", "2026-06-13T18:30:00+09:00", "LG", "두산", 1.76, 2.15, home_power=81, away_power=75, home_recent=78, away_recent=62, home_attack=80, away_attack=71, home_defense=76, away_defense=61, home_standing=84, away_standing=64, home_available=74, away_available=63),
+            make_row("btm-012", "야구", "KBO", "KBO 리그", "2026-06-13T18:30:00+09:00", "SSG", "롯데", 1.84, 2.04, home_power=78, away_power=74, home_recent=70, away_recent=66, home_attack=77, away_attack=73, home_defense=72, away_defense=69, home_standing=79, away_standing=71),
+            make_row("btm-013", "야구", "MLB", "미국 메이저리그", "2026-06-14T08:10:00+09:00", "Yankees", "Blue Jays", 1.89, 1.99, home_power=82, away_power=79, home_recent=75, away_recent=70, home_attack=81, away_attack=76, home_defense=74, away_defense=71, home_standing=83, away_standing=78),
+            make_row("btm-014", "야구", "NPB", "일본 NPB", "2026-06-14T18:00:00+09:00", "Yomiuri", "Hanshin", 2.02, 1.87, home_power=76, away_power=78, home_recent=68, away_recent=73, home_attack=72, away_attack=75, home_defense=70, away_defense=74),
+            make_row("btm-015", "미식축구", "NFL", "미국 NFL", "2026-06-15T09:20:00+09:00", "Chiefs", "Bills", 1.91, 1.95, status="발매예정", home_power=86, away_power=82, home_recent=81, away_recent=76, home_attack=84, away_attack=80, home_defense=75, away_defense=70, home_standing=86, away_standing=79),
+            make_row("btm-016", "미식축구", "NFL", "미국 NFL", "2026-06-15T05:25:00+09:00", "49ers", "Ravens", 1.97, 1.91, status="발매중", home_power=84, away_power=84, home_recent=79, away_recent=78, home_attack=82, away_attack=81, home_defense=77, away_defense=76),
+            make_row("btm-017", "미식축구", "NCAAF", "미국 대학풋볼", "2026-06-16T08:00:00+09:00", "Alabama", "Georgia", 2.06, 1.83, status="발매예정", home_power=83, away_power=85, home_recent=76, away_recent=79, home_attack=80, away_attack=82, home_defense=74, away_defense=77),
+            make_row("btm-018", "아이스하키", "NHL", "미국 NHL", "2026-06-15T08:00:00+09:00", "Bruins", "Rangers", 2.18, 1.79, home_power=74, away_power=79, home_recent=67, away_recent=75, home_attack=69, away_attack=76, home_defense=71, away_defense=74, updated_at="2026-06-12T02:00:00+09:00"),
+            make_row("btm-019", "아이스하키", "NHL", "미국 NHL", "2026-06-15T10:30:00+09:00", "Oilers", "Canucks", 1.86, 2.05, home_power=80, away_power=77, home_recent=76, away_recent=71, home_attack=82, away_attack=74, home_defense=72, away_defense=69),
+            make_row("btm-020", "아이스하키", "KHL", "러시아 KHL", "2026-06-16T00:00:00+09:00", "SKA", "CSKA", 1.95, 1.92, home_power=78, away_power=78, home_recent=72, away_recent=74, home_attack=76, away_attack=75, home_defense=73, away_defense=74),
+            make_row("btm-021", "배구", "VLEAGUE", "한국 V-리그", "2026-06-14T16:00:00+09:00", "대한항공", "현대캐피탈", 1.88, 1.96, round_name="프로토 승부식", home_power=79, away_power=78, home_recent=74, away_recent=72, home_attack=77, away_attack=76, home_defense=74, away_defense=73, home_standing=80, away_standing=79),
+            make_row("btm-022", "배구", "VLEAGUEW", "한국 여자 V-리그", "2026-06-14T19:00:00+09:00", "흥국생명", "현대건설", 1.94, 1.90, home_power=78, away_power=79, home_recent=73, away_recent=75, home_attack=76, away_attack=77, home_defense=73, away_defense=74),
+            make_row("btm-023", "농구", "NBA", "미국 NBA", "2026-06-14T10:00:00+09:00", "Nuggets", "Suns", 1.87, 2.00, home_power=84, away_power=80, home_recent=77, away_recent=72, home_attack=83, away_attack=79, home_defense=74, away_defense=69),
+            make_row("btm-024", "축구", "KLEAGUE2", "K리그2", "2026-06-14T19:30:00+09:00", "수원삼성", "부산", 2.28, 2.96, odds_draw=3.08, round_name="축구토토 승무패", home_power=73, away_power=71, home_recent=68, away_recent=66, home_attack=70, away_attack=68, home_defense=69, away_defense=67),
+            make_row("btm-018-dup", "아이스하키", "NHL", "미국 NHL", "2026-06-15T08:00:00+09:00", "Bruins", "Rangers", 2.12, 1.82, updated_at="2026-06-12T02:12:00+09:00"),
         ]
+
+        return rows
 
 
 class MatchAnalyzer:
@@ -676,6 +572,7 @@ class MatchAnalyzer:
         "야구": 4.75,
         "미식축구": 24.2,
         "아이스하키": 2.95,
+        "배구": 74.0,
     }
 
     FACTOR_WEIGHTS = {
@@ -694,6 +591,17 @@ class MatchAnalyzer:
         "경기 일관성": 0.02,
     }
 
+    LEGACY_FACTOR_WEIGHTS = {
+        "전력 차이": 0.26,
+        "최근 경기 흐름": 0.17,
+        "홈/원정 적합도": 0.13,
+        "상대 전적": 0.09,
+        "공격 생산성": 0.12,
+        "수비 안정성": 0.10,
+        "리그 순위": 0.08,
+        "선수 가용성": 0.05,
+    }
+
     def analyze(self, match: MatchRecord) -> Dict[str, Any]:
         """Analyze a single match and prepare a UI-ready card."""
 
@@ -709,11 +617,13 @@ class MatchAnalyzer:
             projected["projected_margin"],
             derived_context,
         )
-        quality = self._quality_snapshot(match, market_probs, weighted_score, raw_model_probs, derived_context)
+        legacy_model_probs = self._build_legacy_model_probabilities(match, market_probs)
+        hybrid_model_probs = self._blend_model_probabilities(raw_model_probs, legacy_model_probs, 0.64)
+        quality = self._quality_snapshot(match, market_probs, weighted_score, hybrid_model_probs, derived_context)
 
         blended_probs = {
             outcome: self._blend_probability(
-                raw_model_probs.get(outcome),
+                hybrid_model_probs.get(outcome),
                 market_probs.get(outcome),
                 quality["blend_weight"],
             )
@@ -741,7 +651,9 @@ class MatchAnalyzer:
             "updated_at": match.updated_at,
             "odds": asdict(match.odds),
             "market_probabilities": self._round_probabilities(market_probs),
+            "legacy_model_probabilities": self._round_probabilities(legacy_model_probs),
             "raw_model_probabilities": self._round_probabilities(raw_model_probs),
+            "hybrid_model_probabilities": self._round_probabilities(hybrid_model_probs),
             "model_probabilities": self._round_probabilities(blended_probs),
             "probability_bands": probability_bands,
             "recommendation": recommendation,
@@ -752,6 +664,10 @@ class MatchAnalyzer:
             "projection": projected,
             "derived_context": derived_context,
             "outcome_rankings": outcome_rankings,
+            "legacy_analysis": {
+                "method": "기존 단순 가중 분석",
+                "weights": {key: round(value * 100, 1) for key, value in self.LEGACY_FACTOR_WEIGHTS.items()},
+            },
             "team_metrics": {
                 "home": asdict(match.home_metrics),
                 "away": asdict(match.away_metrics),
@@ -952,6 +868,58 @@ class MatchAnalyzer:
             }
 
         return {"home": home_no_draw, "draw": None, "away": 1 - home_no_draw}
+
+    def _build_legacy_model_probabilities(
+        self,
+        match: MatchRecord,
+        market_probs: Dict[str, Optional[float]],
+    ) -> Dict[str, Optional[float]]:
+        """Reproduce the earlier simple weighted model so both methods can coexist."""
+
+        legacy_gaps = {
+            "전력 차이": match.home_metrics.power_rating - match.away_metrics.power_rating,
+            "최근 경기 흐름": match.home_metrics.recent_form - match.away_metrics.recent_form,
+            "홈/원정 적합도": match.home_metrics.venue_index - match.away_metrics.venue_index,
+            "상대 전적": match.home_metrics.head_to_head_index - match.away_metrics.head_to_head_index,
+            "공격 생산성": match.home_metrics.attacking_index - match.away_metrics.defensive_index,
+            "수비 안정성": match.home_metrics.defensive_index - match.away_metrics.attacking_index,
+            "리그 순위": match.home_metrics.standings_index - match.away_metrics.standings_index,
+            "선수 가용성": match.home_metrics.availability_index - match.away_metrics.availability_index,
+        }
+        legacy_score = sum(
+            legacy_gaps[label] * weight for label, weight in self.LEGACY_FACTOR_WEIGHTS.items()
+        )
+        home_no_draw = 1 / (1 + math.exp(-(legacy_score / 11)))
+        if market_probs["draw"] is not None:
+            draw_market = market_probs["draw"] or 0.24
+            draw_model = _clamp(draw_market * 0.92 + (0.11 - min(abs(legacy_score) / 240, 0.05)), 0.16, 0.31)
+            remaining = 1 - draw_model
+            return {
+                "home": remaining * home_no_draw,
+                "draw": draw_model,
+                "away": remaining * (1 - home_no_draw),
+            }
+        return {"home": home_no_draw, "draw": None, "away": 1 - home_no_draw}
+
+    def _blend_model_probabilities(
+        self,
+        primary: Dict[str, Optional[float]],
+        legacy: Dict[str, Optional[float]],
+        primary_weight: float,
+    ) -> Dict[str, Optional[float]]:
+        """Blend the advanced model with the legacy model before market adjustment."""
+
+        result: Dict[str, Optional[float]] = {}
+        for outcome in ("home", "draw", "away"):
+            primary_value = primary.get(outcome)
+            legacy_value = legacy.get(outcome)
+            if primary_value is None:
+                result[outcome] = legacy_value
+            elif legacy_value is None:
+                result[outcome] = primary_value
+            else:
+                result[outcome] = (primary_value * primary_weight) + (legacy_value * (1 - primary_weight))
+        return self._renormalize(result)
 
     def _quality_snapshot(
         self,
@@ -1191,6 +1159,16 @@ class MatchAnalyzer:
 class DashboardService:
     """Compose collected data, analysis results and chart payloads."""
 
+    SPORT_ICONS = {
+        "전체": "📊",
+        "농구": "🏀",
+        "축구": "⚽",
+        "야구": "⚾",
+        "미식축구": "🏈",
+        "아이스하키": "🏒",
+        "배구": "🏐",
+    }
+
     def __init__(self) -> None:
         self.collector = BetmanCollector()
         self.analyzer = MatchAnalyzer()
@@ -1223,9 +1201,12 @@ class DashboardService:
                 "min_edge": round(min_edge, 1),
             },
             "sports": sports,
+            "sports_categories": self._sports_categories(analyzed),
             "summary": summary,
             "status": status,
             "matches": filtered,
+            "legacy_opportunities": self._build_legacy_opportunities(filtered),
+            "selected_sport_label": selected_sport or "전체",
             "total_matches_before_filter": len(analyzed),
             "charts": charts,
             "analysis_notes": insights,
@@ -1319,6 +1300,63 @@ class DashboardService:
         result = [{"name": "전체", "count": len(matches)}]
         for name in sorted(counts):
             result.append({"name": name, "count": counts[name]})
+        return result
+
+    def _sports_categories(self, matches: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """Return a legacy-friendly category map for the original sidebar UI."""
+
+        grouped: Dict[str, Dict[str, Any]] = {}
+        for item in matches:
+            sport_entry = grouped.setdefault(
+                item["sport"],
+                {
+                    "icon": self.SPORT_ICONS.get(item["sport"], "🎯"),
+                    "api_source": "Betman 통합 수집 + 하이브리드 분석",
+                    "leagues": {},
+                },
+            )
+            sport_entry["leagues"][item["league"]] = {
+                "name": item["league_name"],
+                "bookmakers": ["Betman", "Legacy Model", "Hybrid Model"],
+            }
+        return grouped
+
+    def _build_legacy_opportunities(self, matches: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+        """Build the grouped structure expected by the original UI layout."""
+
+        result: Dict[str, Dict[str, Any]] = {}
+        for item in matches:
+            league_entry = result.setdefault(
+                item["league"],
+                {
+                    "info": {
+                        "name": item["league_name"],
+                        "bookmakers": ["Betman", "Legacy Model", "Hybrid Model"],
+                    },
+                    "opps": [],
+                },
+            )
+            recommendation = item["recommendation"]
+            confidence = item["confidence_label"].replace("매우 높음", "매우높음")
+            league_entry["opps"].append(
+                {
+                    "경기": f"{item['home_team']} vs {item['away_team']}",
+                    "시간": item["kickoff"],
+                    "베팅": recommendation["label"],
+                    "배당률": recommendation["odds"] or 0,
+                    "북메이커": "Betman/Hybrid",
+                    "신뢰도": confidence.replace("높음", "높음").replace("중간", "중간"),
+                    "우리확률": recommendation["probability_percent"],
+                    "시장확률": recommendation["market_probability_percent"],
+                    "엣지": recommendation["edge_percent"],
+                    "켈리": recommendation["quarter_kelly_percent"],
+                    "기대값": recommendation["expected_value_percent"],
+                    "레거시확률": item["legacy_model_probabilities"].get(recommendation["outcome"]),
+                    "하이브리드확률": item["hybrid_model_probabilities"].get(recommendation["outcome"]),
+                    "예상스코어": item["projection"]["scoreline_hint"],
+                    "리스크": recommendation["risk_label"],
+                }
+            )
         return result
 
     def _build_summary(

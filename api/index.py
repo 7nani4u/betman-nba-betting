@@ -63,6 +63,34 @@ def api_dashboard():
     return jsonify(payload)
 
 
+@app.route("/api/sport")
+def api_sport():
+    """Return the legacy per-sport payload used by the original UI."""
+
+    selected_sport = request.args.get("name", "").strip() or None
+    min_edge = _parse_min_edge(request.args.get("min_edge", "1.5"))
+    force_refresh = request.args.get("refresh", "0") == "1"
+
+    payload = build_dashboard_payload(
+        selected_sport=selected_sport,
+        min_edge=min_edge,
+        force_refresh=force_refresh,
+    )
+    if selected_sport and selected_sport not in payload["sports_categories"]:
+        return jsonify({"error": "종목을 찾을 수 없습니다.", "opportunities": {}}), 404
+
+    category = payload["sports_categories"].get(selected_sport or "전체")
+    return jsonify(
+        {
+            "sport": selected_sport or "전체",
+            "icon": (category or {}).get("icon", "📊"),
+            "api_source": (category or {}).get("api_source", "Betman 통합 수집 + 하이브리드 분석"),
+            "opportunities": payload["legacy_opportunities"],
+            "summary": payload["summary"],
+        }
+    )
+
+
 @app.route("/api/predictions")
 def api_predictions():
     """Return ranked predictions for automation or external clients."""
